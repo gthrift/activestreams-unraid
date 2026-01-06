@@ -42,7 +42,7 @@ This project is an unofficial community plugin and is not affiliated with, endor
 3. Click on the **Install Plugin** sub-tab.
 4. Copy and paste the following URL into the box:
    ```text
-   https://raw.githubusercontent.com/gthrift/activestreams-unraid/master/activestreams.plg
+   https://raw.githubusercontent.com/gthrift/activestreams-unraid/main/activestreams.plg
    ```
 5. Click **Install**.
 
