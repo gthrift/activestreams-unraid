@@ -127,20 +127,6 @@ For each active stream, the widget shows:
 - Refresh the Unraid dashboard
 - Try logging out and back into Unraid
 
-## Changelog
-
-### 2026.01.06
-- Complete rewrite: Renamed from "Emby Streams" to "Active Streams"
-- Added support for Plex servers
-- Added support for Jellyfin servers
-- Support for multiple server instances of any type
-- Customizable widget icon (Plex, Emby, Jellyfin, or generic)
-- Customizable widget title
-- Progress display showing current time/total duration
-- Server-type color indicators
-- Improved responsive design
-- Connection testing in settings
-
 ## License
 
 MIT License - See LICENSE file for details.
