@@ -1,0 +1,114 @@
+name: Build Plugin Release
+
+on:
+  push:
+    tags:
+      - '*'  # Triggers on any tag push like "2026.01.07"
+  workflow_dispatch:  # Allows manual trigger from GitHub UI
+    inputs:
+      version:
+        description: 'Version number (e.g., 2026.01.07)'
+        required: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+      
+      - name: Determine version
+        id: version
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            echo "VERSION=${{ github.event.inputs.version }}" >> $GITHUB_OUTPUT
+          else
+            # Extract version from tag (removes 'v' prefix if present)
+            VERSION=${GITHUB_REF#refs/tags/}
+            VERSION=${VERSION#v}
+            echo "VERSION=$VERSION" >> $GITHUB_OUTPUT
+          fi
+      
+      - name: Build txz package
+        run: |
+          VERSION="${{ steps.version.outputs.VERSION }}"
+          PLUGIN_NAME="activestreams"
+          
+          echo "Building ${PLUGIN_NAME} version ${VERSION}..."
+          
+          # Create archive directory
+          mkdir -p archive
+          
+          # Create temporary directory structure
+          TEMP_DIR=$(mktemp -d)
+          PLUGIN_DIR="${TEMP_DIR}/usr/local/emhttp/plugins/${PLUGIN_NAME}"
+          mkdir -p "${PLUGIN_DIR}"
+          
+          # Copy source files
+          cp src/*.page "${PLUGIN_DIR}/"
+          cp src/*.php "${PLUGIN_DIR}/"
+          cp metadata/*.png "${PLUGIN_DIR}/"
+          
+          # Create txz archive
+          ARCHIVE_NAME="${PLUGIN_NAME}-${VERSION}.txz"
+          cd "${TEMP_DIR}"
+          tar -cJf "${GITHUB_WORKSPACE}/archive/${ARCHIVE_NAME}" .
+          cd "${GITHUB_WORKSPACE}"
+          
+          # Generate MD5
+          MD5_HASH=$(md5sum "archive/${ARCHIVE_NAME}" | awk '{print $1}')
+          echo "${MD5_HASH}" > "archive/${PLUGIN_NAME}-${VERSION}.md5"
+          
+          # Output for next steps
+          echo "ARCHIVE_NAME=${ARCHIVE_NAME}" >> $GITHUB_ENV
+          echo "MD5_HASH=${MD5_HASH}" >> $GITHUB_ENV
+          
+          echo "Build complete!"
+          echo "Archive: archive/${ARCHIVE_NAME}"
+          echo "MD5: ${MD5_HASH}"
+          
+          # Clean up
+          rm -rf "${TEMP_DIR}"
+      
+      - name: Update plg file with new version and MD5
+        run: |
+          VERSION="${{ steps.version.outputs.VERSION }}"
+          
+          # Update version in plg file
+          sed -i "s/<!ENTITY version.*\".*\"/<!ENTITY version   \"${VERSION}\"/" activestreams.plg
+          
+          # Update MD5 in plg file
+          sed -i "s/<!ENTITY md5.*\".*\"/<!ENTITY md5       \"${MD5_HASH}\"/" activestreams.plg
+          
+          echo "Updated activestreams.plg:"
+          grep -E "ENTITY (version|md5)" activestreams.plg
+      
+      - name: Commit and push changes
+        run: |
+          git config --local user.email "action@github.com"
+          git config --local user.name "GitHub Action"
+          git add archive/ activestreams.plg
+          git commit -m "Build version ${{ steps.version.outputs.VERSION }}" || echo "No changes to commit"
+          git push origin HEAD:main
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      
+      - name: Create Release
+        if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/')
+        uses: softprops/action-gh-release@v1
+        with:
+          files: |
+            archive/${{ env.ARCHIVE_NAME }}
+            archive/activestreams-${{ steps.version.outputs.VERSION }}.md5
+          body: |
+            ## Active Streams v${{ steps.version.outputs.VERSION }}
+            
+            **MD5:** `${{ env.MD5_HASH }}`
+            
+            ### Installation
+            ```
+            https://raw.githubusercontent.com/gthrift/activestreams-unraid/main/activestreams.plg
+            ```
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
