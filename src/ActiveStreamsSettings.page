@@ -1,6 +1,9 @@
 Menu="Utilities"
+Type="xmenu"
 Title="Active Streams Settings"
 Tag="film"
+Icon="film"
+Markdown="false"
 ---
 <?php
     $plugin = "activestreams";
