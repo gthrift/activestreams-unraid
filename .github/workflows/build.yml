@@ -9,6 +9,10 @@ on:
       version:
         description: 'Version number (e.g., 2026.01.08)'
         required: true
+      release_notes:
+        description: 'Release notes (use \n for new lines)'
+        required: false
+        default: '- Bug fixes and improvements'
 
 jobs:
   build:
@@ -31,17 +35,6 @@ jobs:
           fi
           echo "VERSION=${VERSION}" >> $GITHUB_OUTPUT
           echo "Using version: ${VERSION}"
-      
-      - name: List repository contents
-        run: |
-          echo "=== Repository root ==="
-          ls -la
-          echo ""
-          echo "=== src/ directory ==="
-          ls -la src/ || echo "src/ directory not found!"
-          echo ""
-          echo "=== metadata/ directory ==="
-          ls -la metadata/ || echo "metadata/ directory not found!"
       
       - name: Build txz package
         id: build
@@ -134,18 +127,14 @@ jobs:
           # Clean up
           rm -rf "${TEMP_DIR}"
       
-      - name: Update plg file with new version and MD5
+      - name: Update plg file with new version, MD5, and release notes
         run: |
           VERSION="${{ steps.version.outputs.VERSION }}"
+          RELEASE_NOTES="${{ github.event.inputs.release_notes }}"
           
           echo "Updating activestreams.plg..."
           echo "  Version: ${VERSION}"
           echo "  MD5: ${MD5_HASH}"
-          
-          # Show current values
-          echo ""
-          echo "Current values in plg file:"
-          grep -E 'ENTITY (version|md5)' activestreams.plg || true
           
           # Update version in plg file
           sed -i 's/<!ENTITY version[[:space:]]*"[^"]*"/<!ENTITY version   "'"${VERSION}"'"/' activestreams.plg
@@ -153,17 +142,30 @@ jobs:
           # Update MD5 in plg file
           sed -i 's/<!ENTITY md5[[:space:]]*"[^"]*"/<!ENTITY md5       "'"${MD5_HASH}"'"/' activestreams.plg
           
+          # Add release notes if provided (for manual triggers only)
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ] && [ -n "${RELEASE_NOTES}" ]; then
+            echo "  Adding release notes..."
+            
+            # Convert \n to actual newlines
+            FORMATTED_NOTES=$(echo "${RELEASE_NOTES}" | sed 's/\\n/\n/g')
+            
+            # Create the new changelog entry
+            NEW_ENTRY="###${VERSION}\n${FORMATTED_NOTES}\n\n"
+            
+            # Insert after <CHANGES> tag
+            sed -i "s|<CHANGES>|<CHANGES>\n${NEW_ENTRY}|" activestreams.plg
+            
+            echo "  Release notes added"
+          fi
+          
           echo ""
-          echo "Updated values in plg file:"
-          grep -E 'ENTITY (version|md5)' activestreams.plg
+          echo "Updated plg file:"
+          grep -A 5 "<CHANGES>" activestreams.plg | head -10
       
       - name: Commit and push changes
         run: |
           git config --local user.email "action@github.com"
           git config --local user.name "GitHub Action"
-          
-          # Check for changes
-          git status
           
           git add archive/ activestreams.plg
           
