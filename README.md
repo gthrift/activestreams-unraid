@@ -29,11 +29,7 @@ This project is an unofficial community plugin and is not affiliated with, endor
 
 | Dashboard Widget |
 | :--- |
-| ![Dashboard Example](https://raw.githubusercontent.com/gthrift/unraid-activestreams/master/metadata/dashboard_preview.png) |
-
-| Settings Page |
-| :--- |
-| ![Settings Example](https://raw.githubusercontent.com/gthrift/unraid-activestreams/master/metadata/settings_preview.png) |
+| ![Dashboard Example](https://raw.githubusercontent.com/gthrift/unraid-activestreams/main/metadata/widget_preview.png) |
 
 ## Installation
 
