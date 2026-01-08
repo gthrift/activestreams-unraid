@@ -1,8 +1,0 @@
-<?xml version="1.0" encoding="utf-8"?>
-<Maintainer>
-  <Profile>
-    Creating Docker containers with a little different approach than most developers, the container only has the dependencies installed and also the start script and downloads the application itself on the first start and updates the application on every start/restart of the container.
-  </Profile>
-  <DonateLink>paypal.me/gthrift385</DonateLink>
-  <DonateText>If you like my work please consider Donating.</DonateText>
-</Maintainer>
