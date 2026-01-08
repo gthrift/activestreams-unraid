@@ -49,25 +49,6 @@ function formatTime($seconds) {
 }
 
 /**
- * Check if IP is local/LAN
- */
-function isLocalIP($ip) {
-    if (empty($ip)) return true; // Assume local if unknown
-    
-    // Check for common local IP patterns
-    if (preg_match('/^(127\.|10\.|192\.168\.|172\.(1[6-9]|2[0-9]|3[01])\.|::1|fe80:|fc00:|fd00:)/i', $ip)) {
-        return true;
-    }
-    
-    // Check for localhost
-    if ($ip === 'localhost' || $ip === '::1') {
-        return true;
-    }
-    
-    return false;
-}
-
-/**
  * Fetch streams from Plex server
  */
 function fetchPlexStreams($server) {
@@ -109,13 +90,6 @@ function fetchPlexStreams($server) {
             $user = $session['User']['title'] ?? 'Unknown';
             $device = $session['Player']['device'] ?? $session['Player']['product'] ?? 'Unknown';
             $state = $session['Player']['state'] ?? 'playing';
-            
-            // Location - Plex provides this directly
-            $location = $session['Session']['location'] ?? 'lan';
-            $isLocal = ($location === 'lan');
-            
-            // Client IP
-            $clientIP = $session['Player']['address'] ?? '';
             
             // Time info (Plex uses milliseconds)
             $viewOffset = isset($session['viewOffset']) ? $session['viewOffset'] / 1000 : 0;
@@ -164,9 +138,7 @@ function fetchPlexStreams($server) {
                 'progress' => $viewOffset,
                 'duration' => $duration,
                 'transcoding' => $isTranscoding,
-                'transcode_details' => $transcodeDetails,
-                'is_local' => $isLocal,
-                'client_ip' => $clientIP
+                'transcode_details' => $transcodeDetails
             ];
         }
     }
@@ -216,10 +188,6 @@ function fetchEmbyStreams($server) {
             $device = $session['DeviceName'] ?? 'Unknown';
             $isPaused = isset($session['PlayState']['IsPaused']) && $session['PlayState']['IsPaused'];
             
-            // Client IP and location
-            $clientIP = $session['RemoteEndPoint'] ?? '';
-            $isLocal = isLocalIP($clientIP);
-            
             // Time info (Emby uses ticks - 10,000,000 ticks = 1 second)
             $position = isset($session['PlayState']['PositionTicks']) ? $session['PlayState']['PositionTicks'] / 10000000 : 0;
             $duration = isset($item['RunTimeTicks']) ? $item['RunTimeTicks'] / 10000000 : 0;
@@ -263,9 +231,7 @@ function fetchEmbyStreams($server) {
                 'progress' => $position,
                 'duration' => $duration,
                 'transcoding' => $isTranscoding,
-                'transcode_details' => $transcodeDetails,
-                'is_local' => $isLocal,
-                'client_ip' => $clientIP
+                'transcode_details' => $transcodeDetails
             ];
         }
     }
@@ -318,10 +284,6 @@ function fetchJellyfinStreams($server) {
             $device = $session['DeviceName'] ?? 'Unknown';
             $isPaused = isset($session['PlayState']['IsPaused']) && $session['PlayState']['IsPaused'];
             
-            // Client IP and location
-            $clientIP = $session['RemoteEndPoint'] ?? '';
-            $isLocal = isLocalIP($clientIP);
-            
             // Time info (Jellyfin uses ticks - 10,000,000 ticks = 1 second)
             $position = isset($session['PlayState']['PositionTicks']) ? $session['PlayState']['PositionTicks'] / 10000000 : 0;
             $duration = isset($item['RunTimeTicks']) ? $item['RunTimeTicks'] / 10000000 : 0;
@@ -365,9 +327,7 @@ function fetchJellyfinStreams($server) {
                 'progress' => $position,
                 'duration' => $duration,
                 'transcoding' => $isTranscoding,
-                'transcode_details' => $transcodeDetails,
-                'is_local' => $isLocal,
-                'client_ip' => $clientIP
+                'transcode_details' => $transcodeDetails
             ];
         }
     }
@@ -460,9 +420,8 @@ if (empty($allStreams)) {
         // User (no icon)
         echo "<span class='as-user' title='$user'>$user</span>";
         
-        // Progress/Time with LAN/WAN icon, play/pause, and transcode indicator
+        // Progress/Time with play/pause, and transcode indicators
         echo "<span class='as-time' style='color:$statusColor;' title='$timeDisplay'>
-                <i class='fa $locationIcon' style='font-size:10px; margin-right:4px; opacity:0.7;' title='$locationTitle'></i>
                 <i class='fa $statusIcon' style='font-size:9px;'></i>
                 $transcodeHtml
                 <span style='margin-left:4px;'>$timeDisplay</span>
