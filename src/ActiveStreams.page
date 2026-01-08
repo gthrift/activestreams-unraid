@@ -1,6 +1,5 @@
-Menu="Dashboard:0"
+Menu="Dashboard"
 Icon="streams.png"
-Tag="film"
 Cond="parse_ini_file('/boot/config/plugins/activestreams/activestreams.cfg')['DISPLAY_WIDGET'] == '1'"
 ---
 <?php
@@ -154,9 +153,9 @@ $mytiles[$plugin]['column1'] = <<<EOT
 EOT;
 
 // COMPATIBILITY BLOCK FOR UNRAID 7.2+
-\$isResponsiveWebgui = version_compare(parse_ini_file('/etc/unraid-version')['version'] ?? "", '7.2', '>=');
-if ( ! \$isResponsiveWebgui) {
-    \$mytiles[\$plugin]["column1"] .= <<<EOT
+$isResponsiveWebgui = version_compare(parse_ini_file('/etc/unraid-version')['version'] ?? "", '7.2', '>=');
+if ( ! $isResponsiveWebgui) {
+    $mytiles[$plugin]["column1"] .= <<<EOT
         <script>
             \$(function() {
                 \$('#{$plugin}-dashboard-title').replaceWith(function() {
@@ -165,7 +164,7 @@ if ( ! \$isResponsiveWebgui) {
                 \$('#{$plugin}-settings-button').prependTo('#{$plugin}-dashboard-card');
             });
         </script>
-    EOT;
+EOT;
 }
 ?>
 
