@@ -9,7 +9,7 @@
 <Description>
 Dashboard widget displaying active streams from Plex, Emby, and Jellyfin media servers. Shows real-time playback info including title, user, device, progress, and transcoding status with detailed tooltips. Supports multiple servers simultaneously with color-coded server indicators.
 </Description>
-<Support>https://forums.unraid.net/topic/XXXXX-plugin-active-streams/</Support>
+<Support>https://forums.unraid.net/topic/196336-plugin-active-streams-display-your-active-embyjellyfinplex-streams-on-your-dashboard/</Support>
 <Icon>https://raw.githubusercontent.com/gthrift/activestreams-unraid/main/metadata/streams.png</Icon>
 <IconFA>film</IconFA>
 <Project>https://github.com/gthrift/activestreams-unraid</Project>
