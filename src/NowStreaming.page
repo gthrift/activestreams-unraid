@@ -1,4 +1,5 @@
 Menu="Dashboard"
+Title="Now Streaming"
 Icon="streams.png"
 Cond="parse_ini_file('/boot/config/plugins/nowstreaming/nowstreaming.cfg')['DISPLAY_WIDGET'] == '1'"
 ---
@@ -13,29 +14,23 @@ Cond="parse_ini_file('/boot/config/plugins/nowstreaming/nowstreaming.cfg')['DISP
     
     // Map icon to file
     $icon_file = "/plugins/nowstreaming/{$widget_icon}.png";
-?>
 
+$mytiles[$plugin]['column1'] = <<<EOT
 <style>
     .as-icon-img { width: 32px; height: 32px; }
-
-    /* Base Row Styling */
     .as-row, .as-header-row { 
         display: flex;
         align-items: center; 
         width: 100%;
         box-sizing: border-box;
     }
-    
     .as-row { 
         border-bottom: 1px solid rgba(255,255,255,0.05);
         padding: 6px 0; 
     }
     .as-row:last-child { border-bottom: none; }
     .as-transcode { font-size: 10px; opacity: 0.7; margin-right: 4px; }
-
-    /* --- DESKTOP LAYOUT --- */
     .as-server { width: 20px !important; flex-shrink: 0; }
-    
     .as-name { 
         width: 35% !important;
         white-space: nowrap;
@@ -43,7 +38,6 @@ Cond="parse_ini_file('/boot/config/plugins/nowstreaming/nowstreaming.cfg')['DISP
         text-overflow: ellipsis;
         padding-right: 10px;
     }
-
     .as-device { 
         width: 20% !important;
         text-align: center !important;
@@ -51,7 +45,6 @@ Cond="parse_ini_file('/boot/config/plugins/nowstreaming/nowstreaming.cfg')['DISP
         overflow: hidden;
         text-overflow: ellipsis;
     }
-
     .as-user { 
         width: 15% !important;
         text-align: center !important;
@@ -59,7 +52,6 @@ Cond="parse_ini_file('/boot/config/plugins/nowstreaming/nowstreaming.cfg')['DISP
         overflow: hidden;
         text-overflow: ellipsis;
     }
-
     .as-time { 
         width: 25% !important;
         text-align: right !important;
@@ -67,8 +59,6 @@ Cond="parse_ini_file('/boot/config/plugins/nowstreaming/nowstreaming.cfg')['DISP
         font-size: 12px;
         white-space: nowrap;
     }
-
-    /* Header row styling */
     .as-header-row {
         opacity: 0.6;
         font-size: 11px;
@@ -77,19 +67,14 @@ Cond="parse_ini_file('/boot/config/plugins/nowstreaming/nowstreaming.cfg')['DISP
         border-bottom: 1px solid rgba(255,255,255,0.1);
         margin-bottom: 5px;
     }
-    
     .as-header-row .as-server { visibility: hidden; }
-
-    /* --- MOBILE OVERRIDES (Max Width 600px) --- */
     @media only screen and (max-width: 600px) {
         .as-device, .as-user { display: none !important; }
-        
         .as-name { 
             width: auto !important;
             flex: 1 1 auto !important;  
             min-width: 0;
         }
-        
         .as-time { 
             width: auto !important;
             flex: 0 0 auto !important;  
@@ -98,9 +83,6 @@ Cond="parse_ini_file('/boot/config/plugins/nowstreaming/nowstreaming.cfg')['DISP
         }
     }
 </style>
-
-<?php
-$mytiles[$plugin]['column1'] = <<<EOT
 <tbody class="sortable" title="_{$widget_title}_">
   <tr>
     <td>
@@ -145,34 +127,13 @@ $mytiles[$plugin]['column1'] = <<<EOT
     </td>
   </tr>
 </tbody>
-EOT;
-
-// COMPATIBILITY BLOCK FOR UNRAID 7.2+
-$isResponsiveWebgui = version_compare(parse_ini_file('/etc/unraid-version')['version'] ?? "", '7.2', '>=');
-if ( ! $isResponsiveWebgui) {
-    $mytiles[$plugin]["column1"] .= <<<EOT
-        <script>
-            \$(function() {
-                \$('#{$plugin}-dashboard-title').replaceWith(function() {
-                    return \$(this).text() + "<br>";
-                });
-                \$('#{$plugin}-settings-button').prependTo('#{$plugin}-dashboard-card');
-            });
-        </script>
-EOT;
-}
-?>
-
 <script>
-    var asPollInterval = <?=$poll_interval;?>;
+    var asPollInterval = {$poll_interval};
     
     function updateNowStreamingDashboard() {
         $.get("/plugins/nowstreaming/nowstreaming_api.php", function(data) {
             if (data) {
-                // 1. Update list
                 $("#nowstreaming_streams").html(data);
-                
-                // 2. Update count
                 var count = $("#nowstreaming_streams .as-row").length;
                 if(data.indexOf("No active streams") !== -1 || 
                    data.indexOf("No servers configured") !== -1 ||
@@ -189,3 +150,5 @@ EOT;
         setInterval(updateNowStreamingDashboard, asPollInterval);
     });
 </script>
+EOT;
+?>
