@@ -3,7 +3,7 @@
 <!ENTITY name      "nowstreaming">
 <!ENTITY author    "gthrift">
 <!ENTITY version   "2026.01.03">
-<!ENTITY md5       "YOUR_NEW_MD5_HERE">
+<!ENTITY md5       "57dadc289054ad31bb20e61ba2997129">
 <!ENTITY launch    "Settings/NowStreamingSettings">
 <!ENTITY gitURL    "https://raw.githubusercontent.com/gthrift/nowstreaming-unraid/main">
 <!ENTITY pluginURL "&gitURL;/nowstreaming.plg">
@@ -23,6 +23,10 @@
         min="6.12.0">
 
 <CHANGES>
+###2026.01.03
+- Bug fixes and improvements
+
+
 ###2026.01.03
 - Renamed plugin to "Now Streaming"
 - Migrated settings from Active Streams
