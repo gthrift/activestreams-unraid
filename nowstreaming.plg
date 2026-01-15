@@ -62,7 +62,7 @@ fi
 # 3. Set Default Config if missing
 if [ ! -f "&plgPATH;/nowstreaming.cfg" ]; then
     echo "POLL_INTERVAL='5'" &gt; "&plgPATH;/nowstreaming.cfg"
-    echo "DISPLAY_WIDGET='1'" &gt;&gt; "&plgPATH;/nowstreaming.cfg"
+    echo "DISPLAY_WIDGET=\"1\"" >> "&plgPATH;/nowstreaming.cfg"
     echo "WIDGET_ICON='streams'" &gt;&gt; "&plgPATH;/nowstreaming.cfg"
     echo "WIDGET_TITLE='Now Streaming'" &gt;&gt; "&plgPATH;/nowstreaming.cfg"
 fi
