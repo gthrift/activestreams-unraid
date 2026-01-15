@@ -1,6 +1,6 @@
 <?xml version='1.0' standalone='yes'?>
 <!DOCTYPE PLUGIN [
-<!ENTITY name      "Now Streaming">
+<!ENTITY name      "nowstreaming">
 <!ENTITY author    "gthrift">
 <!ENTITY version   "2026.01.03">
 <!ENTITY md5       "86634275289fe9833a3bab7b50762c9b">
