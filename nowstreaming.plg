@@ -3,7 +3,7 @@
 <!ENTITY name      "nowstreaming">
 <!ENTITY author    "gthrift">
 <!ENTITY version   "2026.01.03">
-<!ENTITY md5       "89ff85c11672a161663256176b9ca562">
+<!ENTITY md5       "98d9d4229d815997c0cc53687db0cd1a">
 <!ENTITY launch    "Settings/NowStreamingSettings">
 <!ENTITY gitURL    "https://raw.githubusercontent.com/gthrift/nowstreaming-unraid/main">
 <!ENTITY pluginURL "&gitURL;/nowstreaming.plg">
