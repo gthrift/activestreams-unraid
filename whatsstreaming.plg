@@ -1,91 +1,72 @@
 <?xml version='1.0' standalone='yes'?>
 <!DOCTYPE PLUGIN [
-<!ENTITY name      "nowstreaming">
+<!ENTITY name      "whatsstreaming">
 <!ENTITY author    "gthrift">
-<!ENTITY version   "2026.01.04">
-<!ENTITY md5       "bfcfa5f6a78cc1f8cdc98e9c81a1d74c">
-<!ENTITY launch    "Settings/NowStreamingSettings">
-<!ENTITY gitURL    "https://raw.githubusercontent.com/gthrift/nowstreaming-unraid/main">
-<!ENTITY pluginURL "&gitURL;/nowstreaming.plg">
+<!ENTITY version   "2026.01.15">
+<!ENTITY launch    "Settings/WhatsStreamingSettings">
+<!ENTITY gitURL    "https://raw.githubusercontent.com/gthrift/whatsstreaming-unraid/main">
+<!ENTITY pluginURL "&gitURL;/whatsstreaming.plg">
 <!ENTITY archive   "&gitURL;/archive/&name;-&version;.txz">
 <!ENTITY emhttp    "/usr/local/emhttp/plugins/&name;">
 <!ENTITY plgPATH   "/boot/config/plugins/&name;">
 ]>
 
-<PLUGIN name="&name;" 
+<PLUGIN name="&name;"
         author="&author;" 
         version="&version;" 
         launch="&launch;" 
         pluginURL="&pluginURL;"
-        support="https://forums.unraid.net/topic/196336-plugin-active-streams-display-your-active-embyjellyfinplex-streams-on-your-dashboard/"
-        IconFA="film"
+        IconFA="television"
         icon="streams.png" 
         min="6.12.0">
 
 <CHANGES>
-###2026.01.04
-- Bug fixes
-
-
-###2026.01.03
-- Changed plugin name to Now Streaming
-
-
-###2026.01.02
-- Bug fixes and improvements
-
-
-###2026.01.01
-- Initial Release
+###2026.01.15
+- Rebrand to "What's Streaming?"
+- Fresh installation structure
 </CHANGES>
 
 <OVERVIEW>
-A plugin to create a dashboard widget that shows your active streams from Plex, Emby, and Jellyfin servers
+A dashboard widget that aggregates and displays active streams from Plex, Emby, and Jellyfin.
 </OVERVIEW>
 
-<!-- Download and install the plugin package -->
 <FILE Name="&plgPATH;/&name;-&version;.txz" Run="upgradepkg --install-new">
 <URL>&archive;</URL>
-<MD5>&md5;</MD5>
 </FILE>
 
-<!-- Post-installation script -->
 <FILE Run="/bin/bash">
 <INLINE>
 # 1. Create Config Directory
 mkdir -p "&plgPATH;"
 
 # 2. Set Default Config if missing
-if [ ! -f "&plgPATH;/nowstreaming.cfg" ]; then
-    echo "POLL_INTERVAL='5'" &gt; "&plgPATH;/nowstreaming.cfg"
-    echo "DISPLAY_WIDGET='1'" &gt;&gt; "&plgPATH;/nowstreaming.cfg"
-    echo "WIDGET_ICON='streams'" &gt;&gt; "&plgPATH;/nowstreaming.cfg"
-    echo "WIDGET_TITLE='Now Streaming'" &gt;&gt; "&plgPATH;/nowstreaming.cfg"
+if [ ! -f "&plgPATH;/whatsstreaming.cfg" ]; then
+    echo "POLL_INTERVAL='5'" > "&plgPATH;/whatsstreaming.cfg"
+    echo "DISPLAY_WIDGET='1'" >> "&plgPATH;/whatsstreaming.cfg"
+    echo "WIDGET_ICON='streams'" >> "&plgPATH;/whatsstreaming.cfg"
+    echo "WIDGET_TITLE='What\'s Streaming?'" >> "&plgPATH;/whatsstreaming.cfg"
 fi
 
 # 3. Create empty servers config if missing
 if [ ! -f "&plgPATH;/servers.json" ]; then
-    echo "[]" &gt; "&plgPATH;/servers.json"
+    echo "[]" > "&plgPATH;/servers.json"
 fi
 
-# 4. Fix Permissions
+# 4. Fix Permissions (Crucial for Dashboard access)
 chmod -R 755 "&emhttp;"
 chmod -R 644 "&emhttp;"/*.php "&emhttp;"/*.page "&emhttp;"/*.png 2>/dev/null
 chmod -R 755 "&plgPATH;"
 
-# 5. TOGGLE LOGIC
-CFG_FILE="&plgPATH;/nowstreaming.cfg"
-WIDGET_FILE="&emhttp;/NowStreaming.page"
+# 5. TOGGLE LOGIC (Renames .page to .page.off based on settings)
+CFG_FILE="&plgPATH;/whatsstreaming.cfg"
+WIDGET_FILE="&emhttp;/WhatsStreaming.page"
 
-# Load the config directly into Bash
 if [ -f "$CFG_FILE" ]; then
     source "$CFG_FILE"
 fi
 
-# Default to 1 if the variable didn't load
 DISPLAY_WIDGET="${DISPLAY_WIDGET:-1}"
 
-# Rename logic
 if [ "$DISPLAY_WIDGET" == "0" ]; then
     if [ -f "$WIDGET_FILE" ]; then
         mv "$WIDGET_FILE" "$WIDGET_FILE.off"
@@ -105,26 +86,15 @@ echo ""
 </INLINE>
 </FILE>
 
-<!-- Uninstall script -->
 <FILE Run="/bin/bash" Method="remove">
 <INLINE>
 echo "Uninstalling &name;..."
-
-# Remove Plugin Package
 removepkg "&plgPATH;/&name;-&version;.txz" 2>/dev/null
-
-# Remove Plugin Files (in case removepkg didn't clean up)
 rm -rf "&emhttp;"
-
-# Remove downloaded package
 rm -f "&plgPATH;/&name;-*.txz"
-
-echo ""
 echo "-----------------------------------------------------------"
 echo " &name; has been uninstalled."
 echo "-----------------------------------------------------------"
-echo ""
 </INLINE>
 </FILE>
-
 </PLUGIN>
