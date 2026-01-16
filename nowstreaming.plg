@@ -2,7 +2,7 @@
 <!DOCTYPE PLUGIN [
 <!ENTITY name      "nowstreaming">
 <!ENTITY author    "gthrift">
-<!ENTITY version   "2026.01.04">
+<!ENTITY version   "2026.01.03">
 <!ENTITY md5       "89ff85c11672a161663256176b9ca562">
 <!ENTITY launch    "Settings/NowStreamingSettings">
 <!ENTITY gitURL    "https://raw.githubusercontent.com/gthrift/nowstreaming-unraid/main">
@@ -23,10 +23,6 @@
         min="6.12.0">
 
 <CHANGES>
-###2026.01.04
-- Bug fixes and improvements
-
-
 ###2026.01.03
 - Changed plugin name to Now Streaming
 
