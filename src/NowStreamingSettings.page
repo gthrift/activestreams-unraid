@@ -240,8 +240,6 @@ if ($cfg['DISPLAY_WIDGET'] === '0' && file_exists($pluginPath . 'NowStreaming.pa
             <label>_(Widget Title)_:</label>
             <select name="WIDGET_TITLE" style="width: 200px;">
                 <option value="Now Streaming" <?php echo($cfg['WIDGET_TITLE'] === "Now Streaming" ? "selected" : ""); ?>>Now Streaming</option>
-                <option value="Active Streams" <?php echo($cfg['WIDGET_TITLE'] === "Active Streams" ? "selected" : ""); ?>>Active Streams</option>
-                <option value="Video Streams" <?php echo($cfg['WIDGET_TITLE'] === "Video Streams" ? "selected" : ""); ?>>Video Streams</option>
                 <option value="Plex Streams" <?php echo($cfg['WIDGET_TITLE'] === "Plex Streams" ? "selected" : ""); ?>>Plex Streams</option>
                 <option value="Emby Streams" <?php echo($cfg['WIDGET_TITLE'] === "Emby Streams" ? "selected" : ""); ?>>Emby Streams</option>
                 <option value="Jellyfin Streams" <?php echo($cfg['WIDGET_TITLE'] === "Jellyfin Streams" ? "selected" : ""); ?>>Jellyfin Streams</option>
