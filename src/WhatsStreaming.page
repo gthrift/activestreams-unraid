@@ -1,0 +1,178 @@
+Menu="Dashboard"
+Icon="streams.png"
+Cond="parse_ini_file('/boot/config/plugins/whatsstreaming/whatsstreaming.cfg')['DISPLAY_WIDGET'] == '1'"
+---
+<?php
+    $plugin = "whatsstreaming";
+    $cfg = parse_ini_file("/boot/config/plugins/whatsstreaming/whatsstreaming.cfg");
+    $poll_interval = isset($cfg['POLL_INTERVAL']) ? (int)$cfg['POLL_INTERVAL'] * 1000 : 5000;
+    
+    // Get widget customization
+    $widget_icon = $cfg['WIDGET_ICON'] ?? 'streams';
+    $widget_title = $cfg['WIDGET_TITLE'] ?? "What's Streaming?";
+    
+    // Map icon to file
+    $icon_file = "/plugins/whatsstreaming/{$widget_icon}.png";
+?>
+
+<style>
+    .ws-icon-img { width: 32px; height: 32px; }
+
+    /* Base Row Styling */
+    .ws-row, .ws-header-row { 
+        display: flex; 
+        align-items: center; 
+        width: 100%;
+        box-sizing: border-box;
+    }
+    
+    .ws-row { 
+        border-bottom: 1px solid rgba(255,255,255,0.05); 
+        padding: 6px 0; 
+    }
+    .ws-row:last-child { border-bottom: none; }
+    .ws-transcode { font-size: 10px; opacity: 0.7; margin-right: 4px; }
+
+    /* --- DESKTOP LAYOUT --- */
+    .ws-server { width: 20px !important; flex-shrink: 0; }
+    
+    .ws-name { 
+        width: 35% !important; 
+        white-space: nowrap; 
+        overflow: hidden; 
+        text-overflow: ellipsis; 
+        padding-right: 10px; 
+    }
+
+    .ws-device { 
+        width: 20% !important; 
+        text-align: center !important; 
+        white-space: nowrap; 
+        overflow: hidden; 
+        text-overflow: ellipsis; 
+    }
+
+    .ws-user { 
+        width: 15% !important; 
+        text-align: center !important; 
+        white-space: nowrap; 
+        overflow: hidden; 
+        text-overflow: ellipsis; 
+    }
+
+    .ws-time { 
+        width: 25% !important; 
+        text-align: right !important; 
+        font-family: monospace; 
+        font-size: 12px; 
+        white-space: nowrap; 
+    }
+
+    /* Header row styling */
+    .ws-header-row {
+        opacity: 0.6;
+        font-size: 11px;
+        text-transform: uppercase;
+        padding-bottom: 5px;
+        border-bottom: 1px solid rgba(255,255,255,0.1);
+        margin-bottom: 5px;
+    }
+    
+    .ws-header-row .ws-server { visibility: hidden; }
+
+    /* --- MOBILE OVERRIDES (Max Width 600px) --- */
+    @media only screen and (max-width: 600px) {
+        .ws-device, .ws-user { display: none !important; }
+        .ws-name { width: auto !important; flex: 1 1 auto !important; min-width: 0; }
+        .ws-time { width: auto !important; flex: 0 0 auto !important; margin-left: auto; padding-left: 10px; }
+    }
+</style>
+
+<?php
+$mytiles[$plugin]['column1'] = <<<EOT
+<tbody class="sortable" title="_{$widget_title}_">
+  <tr>
+    <td>
+      <div class='tile-header' id='{$plugin}-dashboard-card'>
+        <div class='tile-header-left'>
+          <img src="{$icon_file}" class="ws-icon-img icon">
+          <div class='section'>
+            <h3 class='tile-header-main' id='{$plugin}-dashboard-title'>_({$widget_title})_</h3>
+            <span id="ws_count_container"><span id="whatsstreaming_count">0</span> _(Active Stream(s))_</span>
+          </div>
+        </div>
+        <div class='tile-header-right'>
+          <div class='tile-header-right-controls'>
+            <a id="{$plugin}-settings-button" href="/Settings/WhatsStreamingSettings" title="_(Settings)_">
+              <i class="fa fa-fw fa-cog control"></i>
+            </a>
+          </div>
+        </div>
+      </div>
+    </td>
+  </tr>
+  <tr>
+    <td>            
+        <div class="ws-header-row">
+            <span class="ws-server"></span>
+            <span class="ws-name">_(Name)_</span>
+            <span class="ws-device">_(Device)_</span>
+            <span class="ws-user">_(User)_</span>
+            <span class="ws-time">_(Progress)_</span>
+        </div>
+    </td>
+  </tr>
+  <tr>
+    <td>
+        <div id="whatsstreaming_streams">
+            <div id="ws_retrieving">
+                <p align="center" style="font-style:italic;text-align:center;padding-top:10px;">_(Retrieving Data...)_</p>
+            </div>
+        </div>
+    </td>
+  </tr>
+</tbody>
+EOT;
+
+// COMPATIBILITY BLOCK FOR UNRAID 7.2+
+$isResponsiveWebgui = version_compare(parse_ini_file('/etc/unraid-version')['version'] ?? "", '7.2', '>=');
+if ( ! $isResponsiveWebgui) {
+    $mytiles[$plugin]["column1"] .= <<<EOT
+        <script>
+            \$(function() {
+                \$('#{$plugin}-dashboard-title').replaceWith(function() {
+                    return \$(this).text() + "<br>";
+                });
+                \$('#{$plugin}-settings-button').prependTo('#{$plugin}-dashboard-card');
+            });
+        </script>
+EOT;
+}
+?>
+
+<script>
+    var wsPollInterval = <?=$poll_interval;?>;
+    
+    function updateWhatsStreamingDashboard() {
+        $.get("/plugins/whatsstreaming/whatsstreaming_api.php", function(data) {
+            if (data) {
+                // 1. Update list
+                $("#whatsstreaming_streams").html(data);
+                
+                // 2. Update count based on row count
+                var count = $("#whatsstreaming_streams .ws-row").length;
+                if(data.indexOf("No active streams") !== -1 || 
+                   data.indexOf("No servers configured") !== -1 ||
+                   data.indexOf("Connection failed") !== -1) { 
+                    count = 0; 
+                }
+                $("#whatsstreaming_count").text(count);
+            }
+        });
+    }
+
+    $(function() {
+        updateWhatsStreamingDashboard();
+        setInterval(updateWhatsStreamingDashboard, wsPollInterval);
+    });
+</script>
