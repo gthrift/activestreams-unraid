@@ -2,8 +2,8 @@
 <!DOCTYPE PLUGIN [
 <!ENTITY name      "activestreams">
 <!ENTITY author    "gthrift">
-<!ENTITY version   "2026.01.06">
-<!ENTITY md5       "b93e064095d8fa03dc337e0165cbecd5">
+<!ENTITY version   "2026.01.07">
+<!ENTITY md5       "17e88da472d96a1622a68adfbf00e87c">
 <!ENTITY launch    "Settings/ActiveStreamsSettings">
 <!ENTITY gitURL    "https://raw.githubusercontent.com/gthrift/activestreams-unraid/main">
 <!ENTITY pluginURL "&gitURL;/activestreams.plg">
@@ -23,6 +23,9 @@
         min="6.12.0">
 
 <CHANGES>
+###2026.01.07
+- Rename ActiveStreams.page to ActiveStreamsDashboard.page to resolve issue with Dynamix Active Streams
+
 ###2026.01.06
 - Testing new build script
 
@@ -50,6 +53,11 @@ A plugin to create a dashboard widget that shows your active streams from Plex, 
 
 <FILE Run="/bin/bash">
         <INLINE>
+                # Remove old webUI files to prevent conflicts
+                # This runs before the new package is installed
+                rm -f "&emhttp;/*.page"
+                rm -f "&emhttp;/*.php"
+
                 # Create Config Directory before download attempts to write to it
                 mkdir -p "&plgPATH;"
         </INLINE>
@@ -64,14 +72,14 @@ A plugin to create a dashboard widget that shows your active streams from Plex, 
         <INLINE>
                 # Set Default Config if missing
                 if [ ! -f "&plgPATH;/activestreams.cfg" ]; then
-                    echo "POLL_INTERVAL='5'" &gt; "&plgPATH;/activestreams.cfg"
-                    echo "WIDGET_ICON='streams'" &gt;&gt; "&plgPATH;/activestreams.cfg"
-                    echo "WIDGET_TITLE='Active Streams'" &gt;&gt; "&plgPATH;/activestreams.cfg"
+                    echo "POLL_INTERVAL='5'" > "&plgPATH;/activestreams.cfg"
+                    echo "WIDGET_ICON='streams'" >> "&plgPATH;/activestreams.cfg"
+                    echo "WIDGET_TITLE='Active Streams'" >> "&plgPATH;/activestreams.cfg"
                 fi
                 
                 # Create empty servers config if missing
                 if [ ! -f "&plgPATH;/servers.json" ]; then
-                    echo "[]" &gt; "&plgPATH;/servers.json"
+                    echo "[]" > "&plgPATH;/servers.json"
                 fi
                 
                 echo ""
