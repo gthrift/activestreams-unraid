@@ -3,7 +3,7 @@
 <!ENTITY name      "activestreams">
 <!ENTITY author    "gthrift">
 <!ENTITY version   "2026.01.04">
-<!ENTITY md5       "81cccfd423a71400efef7a1546155eb6">
+<!ENTITY md5       "b2f5a8c1beabcaf7cd7176d3b1234253">
 <!ENTITY launch    "Settings/ActiveStreamsSettings">
 <!ENTITY gitURL    "https://raw.githubusercontent.com/gthrift/activestreams-unraid/main">
 <!ENTITY pluginURL "&gitURL;/activestreams.plg">
@@ -23,6 +23,9 @@
         min="6.12.0">
 
 <CHANGES>
+###2026.01.04
+- Fix permissions issues
+
 ###2026.01.04
 - CRITICAL BUG FIX: Removed recursive chown commands that were breaking SMB access
  - Fixed issue where plugin installation would cause loss of SMB access to server
