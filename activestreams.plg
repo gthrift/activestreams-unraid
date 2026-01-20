@@ -50,7 +50,6 @@ mkdir -p "&plgPATH;"
 # 2. Set Default Config if missing
 if [ ! -f "&plgPATH;/activestreams.cfg" ]; then
     echo "POLL_INTERVAL='5'" &gt; "&plgPATH;/activestreams.cfg"
-    echo "DISPLAY_WIDGET='1'" &gt;&gt; "&plgPATH;/activestreams.cfg"
     echo "WIDGET_ICON='streams'" &gt;&gt; "&plgPATH;/activestreams.cfg"
     echo "WIDGET_TITLE='Active Streams'" &gt;&gt; "&plgPATH;/activestreams.cfg"
 fi
@@ -64,29 +63,6 @@ fi
 chmod -R 755 "&emhttp;"
 chmod -R 644 "&emhttp;"/*.php "&emhttp;"/*.page "&emhttp;"/*.png 2>/dev/null
 chmod -R 755 "&plgPATH;"
-
-# 5. TOGGLE LOGIC
-CFG_FILE="&plgPATH;/activestreams.cfg"
-WIDGET_FILE="&emhttp;/ActiveStreams.page"
-
-# Load the config directly into Bash
-if [ -f "$CFG_FILE" ]; then
-    source "$CFG_FILE"
-fi
-
-# Default to 1 if the variable didn't load
-DISPLAY_WIDGET="${DISPLAY_WIDGET:-1}"
-
-# Rename logic
-if [ "$DISPLAY_WIDGET" == "0" ]; then
-    if [ -f "$WIDGET_FILE" ]; then
-        mv "$WIDGET_FILE" "$WIDGET_FILE.off"
-    fi
-else
-    if [ -f "$WIDGET_FILE.off" ]; then
-        mv "$WIDGET_FILE.off" "$WIDGET_FILE"
-    fi
-fi
 
 echo ""
 echo "-----------------------------------------------------------"

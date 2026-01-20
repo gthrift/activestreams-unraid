@@ -212,7 +212,6 @@ $servers_file = "/boot/config/plugins/activestreams/servers.json";
 $cfg = file_exists($cfg_file) ? parse_ini_file($cfg_file) : [];
 
 // Set Defaults
-$cfg['DISPLAY_WIDGET'] = $cfg['DISPLAY_WIDGET'] ?? "1";
 $cfg['POLL_INTERVAL'] = $cfg['POLL_INTERVAL'] ?? "5";
 $cfg['WIDGET_ICON'] = $cfg['WIDGET_ICON'] ?? "streams";
 $cfg['WIDGET_TITLE'] = $cfg['WIDGET_TITLE'] ?? "Active Streams";
@@ -220,14 +219,6 @@ $cfg['WIDGET_TITLE'] = $cfg['WIDGET_TITLE'] ?? "Active Streams";
 // Load servers
 $servers = file_exists($servers_file) ? json_decode(file_get_contents($servers_file), true) : [];
 if (!is_array($servers)) $servers = [];
-
-// Toggle Widget
-$pluginPath = '/usr/local/emhttp/plugins/activestreams/';
-if ($cfg['DISPLAY_WIDGET'] === '0' && file_exists($pluginPath . 'ActiveStreams.page')) {
-    rename($pluginPath . 'ActiveStreams.page', $pluginPath . 'ActiveStreams.page.off');
-} else if ($cfg['DISPLAY_WIDGET'] === '1' && file_exists($pluginPath . 'ActiveStreams.page.off')) {
-    rename($pluginPath . 'ActiveStreams.page.off', $pluginPath . 'ActiveStreams.page');
-}
 ?>
 
 <!-- General Settings Section -->
@@ -261,13 +252,7 @@ if ($cfg['DISPLAY_WIDGET'] === '0' && file_exists($pluginPath . 'ActiveStreams.p
             <label>_(Refresh Interval)_:</label>
             <input type="number" name="POLL_INTERVAL" value="<?php echo($cfg['POLL_INTERVAL']); ?>" min="1" max="60" style="width: 80px;"> _(seconds)_
         </div>
-        
-        <div class="as-form-row">
-            <label>_(Display Dashboard Widget)_:</label>
-            <input type="radio" name="DISPLAY_WIDGET" value="1" <?php echo($cfg['DISPLAY_WIDGET'] === "1" ? "checked" : ""); ?>/> _(On)_
-            <input type="radio" name="DISPLAY_WIDGET" value="0" <?php echo($cfg['DISPLAY_WIDGET'] === "0" ? "checked" : ""); ?>/> _(Off)_
-        </div>
-        
+
         <input type="submit" value="_(Save Settings)_" class="as-btn as-btn-primary">
     </form>
 </div>
