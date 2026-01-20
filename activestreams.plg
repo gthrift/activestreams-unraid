@@ -2,10 +2,10 @@
 <!DOCTYPE PLUGIN [
 <!ENTITY name      "activestreams">
 <!ENTITY author    "gthrift">
-<!ENTITY version   "2026.01.03">
-<!ENTITY md5       "81cccfd423a71400efef7a1546155eb6">
+<!ENTITY version   "2026.01.04">
+<!ENTITY md5       "b2f5a8c1beabcaf7cd7176d3b1234253">
 <!ENTITY launch    "Settings/ActiveStreamsSettings">
-<!ENTITY gitURL    "https://raw.githubusercontent.com/gthrift/activestreams-unraid/main">
+<!ENTITY gitURL    "https://raw.githubusercontent.com/gthrift/activestreams-unraid/refs/heads/2026.01.04">
 <!ENTITY pluginURL "&gitURL;/activestreams.plg">
 <!ENTITY archive   "&gitURL;/archive/&name;-&version;.txz">
 <!ENTITY emhttp    "/usr/local/emhttp/plugins/&name;">
@@ -23,9 +23,12 @@
         min="6.12.0">
 
 <CHANGES>
+###2026.01.04
+- Fix permissions issues
+
 ###2026.01.03
-- Bug fixes and improvements 
- - Better logging and error handling 
+- Bug fixes and improvements
+ - Better logging and error handling
  - Removed widget on/of toggle
 
 ###2026.01.02
@@ -41,9 +44,9 @@ A plugin to create a dashboard widget that shows your active streams from Plex, 
 </OVERVIEW>
 
 <!-- Download and install the plugin package -->
-<FILE Name="&plgPATH;/&name;-&version;.txz" Run="upgradepkg --install-new">
-<URL>&archive;</URL>
-<MD5>&md5;</MD5>
+<FILE Name="&plgPATH;/&plgNAME;.txz" Run="upgradepkg --install-new --reinstall">
+        <URL>&gitURL;/archive/&plgNAME;.txz</URL>
+        <MD5>&md5;</MD5>
 </FILE>
 
 <!-- Post-installation script -->
@@ -64,19 +67,6 @@ if [ ! -f "&plgPATH;/servers.json" ]; then
     echo "[]" &gt; "&plgPATH;/servers.json"
 fi
 
-# 4. Fix Permissions and Ownership
-# Set ownership to root for plugin files
-chown -R root:root "&emhttp;"
-# Set directory permissions
-chmod 755 "&emhttp;"
-# Set file permissions (non-executable)
-find "&emhttp;" -type f -exec chmod 644 {} \;
-# Set ownership for config directory and files
-chown -R root:root "&plgPATH;"
-# Set config directory and file permissions
-chmod 755 "&plgPATH;"
-chmod 644 "&plgPATH;/activestreams.cfg" 2>/dev/null
-chmod 644 "&plgPATH;/servers.json" 2>/dev/null
 
 echo ""
 echo "-----------------------------------------------------------"
