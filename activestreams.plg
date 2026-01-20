@@ -37,7 +37,6 @@
 ###2026.01.02
 - Bug fixes and improvements
 
-
 ###2026.01.01
 - Initial Release
 </CHANGES>
@@ -46,34 +45,31 @@
 A plugin to create a dashboard widget that shows your active streams from Plex, Emby, and Jellyfin servers
 </OVERVIEW>
 
-<!-- Download and install the plugin package -->
 <FILE Run="/bin/bash">
 <INLINE>
-# Create Config Directory before download
+# Create Config Directory before download attempts to write to it
 mkdir -p "&plgPATH;"
 </INLINE>
 </FILE>
 
 <FILE Name="&plgPATH;/&name;-&version;.txz" Run="upgradepkg --install-new --reinstall">
-        <URL>&archive;</URL>
-        <MD5>&md5;</MD5>
+    <URL>&archive;</URL>
+    <MD5>&md5;</MD5>
 </FILE>
 
 <FILE Run="/bin/bash">
 <INLINE>
-
-# 2. Set Default Config if missing
+# Set Default Config if missing
 if [ ! -f "&plgPATH;/activestreams.cfg" ]; then
     echo "POLL_INTERVAL='5'" &gt; "&plgPATH;/activestreams.cfg"
     echo "WIDGET_ICON='streams'" &gt;&gt; "&plgPATH;/activestreams.cfg"
     echo "WIDGET_TITLE='Active Streams'" &gt;&gt; "&plgPATH;/activestreams.cfg"
 fi
 
-# 3. Create empty servers config if missing
+# Create empty servers config if missing
 if [ ! -f "&plgPATH;/servers.json" ]; then
     echo "[]" &gt; "&plgPATH;/servers.json"
 fi
-
 
 echo ""
 echo "-----------------------------------------------------------"
@@ -84,7 +80,6 @@ echo ""
 </INLINE>
 </FILE>
 
-<!-- Uninstall script -->
 <FILE Run="/bin/bash" Method="remove">
 <INLINE>
 echo "Uninstalling &name;..."
@@ -94,7 +89,7 @@ removepkg &plgPATH;/*.txz
 
 rm -rf &emhttp;
 rm -rf &plgPATH;/*.txz \
-&plgPATH;/*.md5
+       &plgPATH;/*.md5
 
 # Configuration files are preserved for future reinstallation
 # To manually remove configs, delete: &plgPATH;/activestreams.cfg and &plgPATH;/servers.json
