@@ -2,8 +2,8 @@
 <!DOCTYPE PLUGIN [
 <!ENTITY name      "activestreams">
 <!ENTITY author    "gthrift">
-<!ENTITY version   "2026.01.04">
-<!ENTITY md5       "b2f5a8c1beabcaf7cd7176d3b1234253">
+<!ENTITY version   "2026.01.05">
+<!ENTITY md5       "6860fa2e8123e6eb038de59473c4fbae">
 <!ENTITY launch    "Settings/ActiveStreamsSettings">
 <!ENTITY gitURL    "https://raw.githubusercontent.com/gthrift/activestreams-unraid/refs/heads/2026.01.04">
 <!ENTITY pluginURL "&gitURL;/activestreams.plg">
@@ -23,6 +23,9 @@
         min="6.12.0">
 
 <CHANGES>
+###2026.01.05
+- Fix install script that breaks SMB
+
 ###2026.01.04
 - Fix permissions issues
 
