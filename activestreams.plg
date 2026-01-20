@@ -85,11 +85,12 @@ echo ""
 <INLINE>
 echo "Uninstalling &name;..."
 
-# Remove Plugin Package
-removepkg "&plgPATH;/&name;-&version;.txz" 2>/dev/null
+# uninstall plugin
+removepkg &plgPATH;/*.txz
 
-# Remove downloaded packages
-rm -f "&plgPATH;/&name;-*.txz"
+rm -rf &emhttp;
+rm -rf &plgPATH;/*.txz \
+&plgPATH;/*.md5
 
 # Configuration files are preserved for future reinstallation
 # To manually remove configs, delete: &plgPATH;/activestreams.cfg and &plgPATH;/servers.json
