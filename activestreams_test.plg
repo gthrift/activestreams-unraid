@@ -1,0 +1,114 @@
+<?xml version='1.0' standalone='yes'?>
+<!DOCTYPE PLUGIN [
+<!ENTITY name      "activestreams">
+<!ENTITY author    "gthrift">
+<!ENTITY version   "2026.01.06">
+<!ENTITY md5       "b93e064095d8fa03dc337e0165cbecd5">
+<!ENTITY launch    "Settings/ActiveStreamsSettings">
+<!ENTITY gitURL    "https://raw.githubusercontent.com/gthrift/activestreams-unraid/main">
+<!ENTITY pluginURL "&gitURL;/activestreams.plg">
+<!ENTITY archive   "&gitURL;/archive/&name;-&version;.txz">
+<!ENTITY emhttp    "/usr/local/emhttp/plugins/&name;">
+<!ENTITY plgPATH   "/boot/config/plugins/&name;">
+]>
+
+<PLUGIN name="&name;" 
+        author="&author;" 
+        version="&version;" 
+        launch="&launch;" 
+        pluginURL="&pluginURL;"
+        support="https://forums.unraid.net/topic/196336-plugin-active-streams-display-your-active-embyjellyfinplex-streams-on-your-dashboard/"
+        IconFA="film"
+        icon="streams.png" 
+        min="6.12.0">
+
+<CHANGES>
+###2026.01.06
+- Testing new build script
+
+###2026.01.05
+- Fix install script that breaks SMB
+
+###2026.01.04
+- Fix permissions issues
+
+###2026.01.03
+- Bug fixes and improvements
+ - Better logging and error handling
+ - Removed widget on/of toggle
+
+###2026.01.02
+- Bug fixes and improvements
+
+###2026.01.01
+- Initial Release
+</CHANGES>
+
+<OVERVIEW>
+A plugin to create a dashboard widget that shows your active streams from Plex, Emby, and Jellyfin servers
+</OVERVIEW>
+
+<FILE Run="/bin/bash">
+        <INLINE>
+                # Create Config Directory before download attempts to write to it
+                mkdir -p "&plgPATH;"
+        </INLINE>
+</FILE>
+
+<FILE Name="&plgPATH;/&name;-&version;.txz" Run="upgradepkg --install-new --reinstall">
+    <URL>&archive;</URL>
+    <MD5>&md5;</MD5>
+</FILE>
+
+<FILE Run="/bin/bash">
+        <INLINE>
+                # Set Default Config if missing
+                if [ ! -f "&plgPATH;/activestreams.cfg" ]; then
+                    echo "POLL_INTERVAL='5'" &gt; "&plgPATH;/activestreams.cfg"
+                    echo "WIDGET_ICON='streams'" &gt;&gt; "&plgPATH;/activestreams.cfg"
+                    echo "WIDGET_TITLE='Active Streams'" &gt;&gt; "&plgPATH;/activestreams.cfg"
+                fi
+                
+                # Create empty servers config if missing
+                if [ ! -f "&plgPATH;/servers.json" ]; then
+                    echo "[]" &gt; "&plgPATH;/servers.json"
+                fi
+                
+                echo ""
+                echo "-----------------------------------------------------------"
+                echo " &name; has been installed."
+                echo " Version: &version;"
+                echo "-----------------------------------------------------------"
+                echo ""
+        </INLINE>
+</FILE>
+
+<FILE Run="/bin/bash" Method="remove">
+        <INLINE>
+                echo "Uninstalling &name;..."
+
+                # uninstall plugin
+                removepkg &plgPATH;/*.txz
+                
+                rm -rf &emhttp;
+                rm -rf &plgPATH;/*.txz \
+                       &plgPATH;/*.md5
+                
+                # Configuration files are preserved for future reinstallation
+                # To manually remove configs, delete: &plgPATH;/activestreams.cfg and &plgPATH;/servers.json
+                
+                echo ""
+                echo "-----------------------------------------------------------"
+                echo " &name; has been uninstalled."
+                echo " Your server configurations have been preserved at:"
+                echo " &plgPATH;/"
+                echo ""
+                echo " To completely remove all settings, manually delete:"
+                echo " &plgPATH;/activestreams.cfg"
+                echo " &plgPATH;/servers.json"
+                echo "-----------------------------------------------------------"
+                echo ""
+        </INLINE>
+</FILE>
+
+</PLUGIN>
