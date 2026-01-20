@@ -40,6 +40,13 @@
 A plugin to create a dashboard widget that shows your active streams from Plex, Emby, and Jellyfin servers
 </OVERVIEW>
 
+<!-- Remove cached package to force fresh download -->
+<FILE Run="/bin/bash">
+<INLINE>
+rm -f "&plgPATH;/&name;-&version;.txz"
+</INLINE>
+</FILE>
+
 <!-- Download and install the plugin package -->
 <FILE Name="&plgPATH;/&name;-&version;.txz" Run="upgradepkg --install-new">
 <URL>&archive;</URL>
