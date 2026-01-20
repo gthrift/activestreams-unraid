@@ -26,11 +26,6 @@
 ###2026.01.04
 - Fix permissions issues
 
-###2026.01.04
-- CRITICAL BUG FIX: Removed recursive chown commands that were breaking SMB access
- - Fixed issue where plugin installation would cause loss of SMB access to server
- - Removed unnecessary file ownership changes that conflicted with Unraid system
-
 ###2026.01.03
 - Bug fixes and improvements
  - Better logging and error handling
