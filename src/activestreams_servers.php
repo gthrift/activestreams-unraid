@@ -15,13 +15,90 @@ function loadServers() {
         return [];
     }
     $data = json_decode(file_get_contents($servers_file), true);
+
+    // Check for JSON decode errors
+    if (json_last_error() !== JSON_ERROR_NONE) {
+        error_log("Active Streams: JSON decode error in loadServers() - " . json_last_error_msg());
+        return [];
+    }
+
     return is_array($data) ? $data : [];
 }
 
 // Save servers
 function saveServers($servers) {
     global $servers_file;
-    return file_put_contents($servers_file, json_encode($servers, JSON_PRETTY_PRINT));
+    $result = file_put_contents($servers_file, json_encode($servers, JSON_PRETTY_PRINT));
+
+    if ($result === false) {
+        error_log("Active Streams: Failed to write servers.json - check file permissions");
+        return false;
+    }
+
+    return $result;
+}
+
+// Validate host (IP or hostname)
+function validateHost($host) {
+    // Allow IP addresses
+    if (filter_var($host, FILTER_VALIDATE_IP)) {
+        return true;
+    }
+    // Allow valid domain names/hostnames
+    if (filter_var($host, FILTER_VALIDATE_DOMAIN, FILTER_FLAG_HOSTNAME)) {
+        return true;
+    }
+    // Allow localhost
+    if ($host === 'localhost') {
+        return true;
+    }
+    return false;
+}
+
+// Validate port number
+function validatePort($port) {
+    return is_numeric($port) && $port >= 1 && $port <= 65535;
+}
+
+// Validate server type
+function validateServerType($type) {
+    return in_array($type, ['plex', 'emby', 'jellyfin'], true);
+}
+
+// Sanitize and validate server data
+function validateServerData($data) {
+    $errors = [];
+
+    // Validate server type
+    if (!isset($data['type']) || !validateServerType($data['type'])) {
+        $errors[] = 'Invalid server type';
+    }
+
+    // Validate name
+    if (!isset($data['name']) || trim($data['name']) === '') {
+        $errors[] = 'Server name is required';
+    } elseif (strlen($data['name']) > 100) {
+        $errors[] = 'Server name too long (max 100 characters)';
+    }
+
+    // Validate host
+    if (!isset($data['host']) || trim($data['host']) === '') {
+        $errors[] = 'Host is required';
+    } elseif (!validateHost($data['host'])) {
+        $errors[] = 'Invalid host IP/hostname';
+    }
+
+    // Validate port
+    if (!isset($data['port']) || !validatePort($data['port'])) {
+        $errors[] = 'Invalid port number (must be 1-65535)';
+    }
+
+    // Validate token
+    if (!isset($data['token']) || trim($data['token']) === '') {
+        $errors[] = 'API token/key is required';
+    }
+
+    return $errors;
 }
 
 // Test server connection
@@ -114,16 +191,25 @@ $action = $_POST['action'] ?? '';
 
 switch ($action) {
     case 'add':
-        $servers = loadServers();
-        $servers[] = [
+        $serverData = [
             'type' => $_POST['type'] ?? 'plex',
-            'name' => $_POST['name'] ?? 'New Server',
-            'host' => $_POST['host'] ?? '',
+            'name' => trim($_POST['name'] ?? ''),
+            'host' => trim($_POST['host'] ?? ''),
             'port' => $_POST['port'] ?? '',
             'token' => $_POST['token'] ?? '',
             'ssl' => $_POST['ssl'] ?? '0'
         ];
-        
+
+        // Validate input
+        $validationErrors = validateServerData($serverData);
+        if (!empty($validationErrors)) {
+            echo json_encode(['success' => false, 'error' => implode(', ', $validationErrors)]);
+            break;
+        }
+
+        $servers = loadServers();
+        $servers[] = $serverData;
+
         if (saveServers($servers)) {
             echo json_encode(['success' => true]);
         } else {
@@ -134,24 +220,34 @@ switch ($action) {
     case 'edit':
         $index = (int)($_POST['index'] ?? -1);
         $servers = loadServers();
-        
-        if ($index >= 0 && $index < count($servers)) {
-            $servers[$index] = [
-                'type' => $_POST['type'] ?? 'plex',
-                'name' => $_POST['name'] ?? 'Server',
-                'host' => $_POST['host'] ?? '',
-                'port' => $_POST['port'] ?? '',
-                'token' => $_POST['token'] ?? '',
-                'ssl' => $_POST['ssl'] ?? '0'
-            ];
-            
-            if (saveServers($servers)) {
-                echo json_encode(['success' => true]);
-            } else {
-                echo json_encode(['success' => false, 'error' => 'Failed to save']);
-            }
-        } else {
+
+        if ($index < 0 || $index >= count($servers)) {
             echo json_encode(['success' => false, 'error' => 'Invalid index']);
+            break;
+        }
+
+        $serverData = [
+            'type' => $_POST['type'] ?? 'plex',
+            'name' => trim($_POST['name'] ?? ''),
+            'host' => trim($_POST['host'] ?? ''),
+            'port' => $_POST['port'] ?? '',
+            'token' => $_POST['token'] ?? '',
+            'ssl' => $_POST['ssl'] ?? '0'
+        ];
+
+        // Validate input
+        $validationErrors = validateServerData($serverData);
+        if (!empty($validationErrors)) {
+            echo json_encode(['success' => false, 'error' => implode(', ', $validationErrors)]);
+            break;
+        }
+
+        $servers[$index] = $serverData;
+
+        if (saveServers($servers)) {
+            echo json_encode(['success' => true]);
+        } else {
+            echo json_encode(['success' => false, 'error' => 'Failed to save']);
         }
         break;
         
