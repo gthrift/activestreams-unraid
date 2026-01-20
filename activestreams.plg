@@ -2,8 +2,8 @@
 <!DOCTYPE PLUGIN [
 <!ENTITY name      "activestreams">
 <!ENTITY author    "gthrift">
-<!ENTITY version   "2026.01.02">
-<!ENTITY md5       "984246c90bc25f4125750d3e417f01cd">
+<!ENTITY version   "2026.01.03">
+<!ENTITY md5       "81cccfd423a71400efef7a1546155eb6">
 <!ENTITY launch    "Settings/ActiveStreamsSettings">
 <!ENTITY gitURL    "https://raw.githubusercontent.com/gthrift/activestreams-unraid/main">
 <!ENTITY pluginURL "&gitURL;/activestreams.plg">
@@ -23,6 +23,11 @@
         min="6.12.0">
 
 <CHANGES>
+###2026.01.03
+- Bug fixes and improvements 
+ - Better logging and error handling 
+ - Removed widget on/of toggle
+
 ###2026.01.02
 - Bug fixes and improvements
 
