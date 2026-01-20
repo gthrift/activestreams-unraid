@@ -54,22 +54,32 @@ function formatTime($seconds) {
 function fetchPlexStreams($server) {
     $protocol = ($server['ssl'] === '1' || $server['ssl'] === true) ? 'https' : 'http';
     $url = "$protocol://{$server['host']}:{$server['port']}/status/sessions?X-Plex-Token={$server['token']}";
-    
+
     $ch = curl_init();
     curl_setopt($ch, CURLOPT_URL, $url);
     curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-    curl_setopt($ch, CURLOPT_CONNECTTIMEOUT, 2);
-    curl_setopt($ch, CURLOPT_TIMEOUT, 3);
+    curl_setopt($ch, CURLOPT_CONNECTTIMEOUT, 5);
+    curl_setopt($ch, CURLOPT_TIMEOUT, 10);
     curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
     curl_setopt($ch, CURLOPT_SSL_VERIFYHOST, false);
-    curl_setopt($ch, CURLOPT_HTTPHEADER, ['Accept: application/json']);
-    
+    curl_setopt($ch, CURLOPT_HTTPHEADER, [
+        'Accept: application/json',
+        'X-Plex-Token: ' . $server['token']
+    ]);
+
     $response = curl_exec($ch);
     $http_code = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+    $curl_error = curl_error($ch);
     curl_close($ch);
-    
+
+    if ($curl_error) {
+        error_log("Plex connection error for {$server['name']}: $curl_error");
+        return ['error' => "Connection error: $curl_error"];
+    }
+
     if ($http_code !== 200 || !$response) {
-        return ['error' => 'Connection failed'];
+        error_log("Plex HTTP error for {$server['name']}: HTTP $http_code");
+        return ['error' => "HTTP $http_code"];
     }
     
     $data = json_decode($response, true);
@@ -152,21 +162,28 @@ function fetchPlexStreams($server) {
 function fetchEmbyStreams($server) {
     $protocol = ($server['ssl'] === '1' || $server['ssl'] === true) ? 'https' : 'http';
     $url = "$protocol://{$server['host']}:{$server['port']}/emby/Sessions?api_key={$server['token']}";
-    
+
     $ch = curl_init();
     curl_setopt($ch, CURLOPT_URL, $url);
     curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-    curl_setopt($ch, CURLOPT_CONNECTTIMEOUT, 2);
-    curl_setopt($ch, CURLOPT_TIMEOUT, 3);
+    curl_setopt($ch, CURLOPT_CONNECTTIMEOUT, 5);
+    curl_setopt($ch, CURLOPT_TIMEOUT, 10);
     curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
     curl_setopt($ch, CURLOPT_SSL_VERIFYHOST, false);
-    
+
     $response = curl_exec($ch);
     $http_code = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+    $curl_error = curl_error($ch);
     curl_close($ch);
-    
+
+    if ($curl_error) {
+        error_log("Emby connection error for {$server['name']}: $curl_error");
+        return ['error' => "Connection error: $curl_error"];
+    }
+
     if ($http_code !== 200 || !$response) {
-        return ['error' => 'Connection failed'];
+        error_log("Emby HTTP error for {$server['name']}: HTTP $http_code");
+        return ['error' => "HTTP $http_code"];
     }
     
     $sessions = json_decode($response, true);
@@ -245,24 +262,31 @@ function fetchEmbyStreams($server) {
 function fetchJellyfinStreams($server) {
     $protocol = ($server['ssl'] === '1' || $server['ssl'] === true) ? 'https' : 'http';
     $url = "$protocol://{$server['host']}:{$server['port']}/Sessions";
-    
+
     $ch = curl_init();
     curl_setopt($ch, CURLOPT_URL, $url);
     curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-    curl_setopt($ch, CURLOPT_CONNECTTIMEOUT, 2);
-    curl_setopt($ch, CURLOPT_TIMEOUT, 3);
+    curl_setopt($ch, CURLOPT_CONNECTTIMEOUT, 5);
+    curl_setopt($ch, CURLOPT_TIMEOUT, 10);
     curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
     curl_setopt($ch, CURLOPT_SSL_VERIFYHOST, false);
     curl_setopt($ch, CURLOPT_HTTPHEADER, [
         "X-Emby-Token: {$server['token']}"
     ]);
-    
+
     $response = curl_exec($ch);
     $http_code = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+    $curl_error = curl_error($ch);
     curl_close($ch);
-    
+
+    if ($curl_error) {
+        error_log("Jellyfin connection error for {$server['name']}: $curl_error");
+        return ['error' => "Connection error: $curl_error"];
+    }
+
     if ($http_code !== 200 || !$response) {
-        return ['error' => 'Connection failed'];
+        error_log("Jellyfin HTTP error for {$server['name']}: HTTP $http_code");
+        return ['error' => "HTTP $http_code"];
     }
     
     $sessions = json_decode($response, true);
