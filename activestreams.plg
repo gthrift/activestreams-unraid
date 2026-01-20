@@ -47,16 +47,20 @@ A plugin to create a dashboard widget that shows your active streams from Plex, 
 </OVERVIEW>
 
 <!-- Download and install the plugin package -->
+<FILE Run="/bin/bash">
+<INLINE>
+# Create Config Directory before download
+mkdir -p "&plgPATH;"
+</INLINE>
+</FILE>
+
 <FILE Name="&plgPATH;/&name;-&version;.txz" Run="upgradepkg --install-new --reinstall">
         <URL>&archive;</URL>
         <MD5>&md5;</MD5>
 </FILE>
 
-<!-- Post-installation script -->
 <FILE Run="/bin/bash">
 <INLINE>
-# 1. Create Config Directory
-mkdir -p "&plgPATH;"
 
 # 2. Set Default Config if missing
 if [ ! -f "&plgPATH;/activestreams.cfg" ]; then
