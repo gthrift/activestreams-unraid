@@ -4,7 +4,10 @@
  * Fetches and aggregates active streams from all configured media servers
  */
 
-error_reporting(0);
+// Proper error handling: log errors but don't display them to users
+error_reporting(E_ALL);
+ini_set('display_errors', '0');
+ini_set('log_errors', '1');
 
 $cfg_file = "/boot/config/plugins/activestreams/activestreams.cfg";
 $servers_file = "/boot/config/plugins/activestreams/servers.json";
@@ -26,6 +29,16 @@ if (!file_exists($servers_file)) {
 }
 
 $servers = json_decode(file_get_contents($servers_file), true);
+
+// Check for JSON decode errors
+if (json_last_error() !== JSON_ERROR_NONE) {
+    error_log("Active Streams: JSON decode error in servers.json - " . json_last_error_msg());
+    echo "<div style='padding:15px; text-align:center; color:#d44;'>
+            <i class='fa fa-exclamation-circle'></i> _(Error loading server configuration. Please check settings.)_
+          </div>";
+    exit;
+}
+
 if (empty($servers)) {
     echo "<div style='padding:15px; text-align:center; color:#eebb00;'>
             <i class='fa fa-exclamation-triangle'></i> _(No servers configured. Please add a server in settings.)_
@@ -41,7 +54,7 @@ function formatTime($seconds) {
     $hours = floor($seconds / 3600);
     $minutes = floor(($seconds % 3600) / 60);
     $secs = $seconds % 60;
-    
+
     if ($hours > 0) {
         return sprintf("%d:%02d:%02d", $hours, $minutes, $secs);
     }
@@ -49,11 +62,33 @@ function formatTime($seconds) {
 }
 
 /**
- * Fetch streams from Plex server
+ * Build curl handle for a specific server type
  */
-function fetchPlexStreams($server) {
+function buildCurlHandle($server) {
     $protocol = ($server['ssl'] === '1' || $server['ssl'] === true) ? 'https' : 'http';
-    $url = "$protocol://{$server['host']}:{$server['port']}/status/sessions?X-Plex-Token={$server['token']}";
+
+    switch ($server['type']) {
+        case 'plex':
+            $url = "$protocol://{$server['host']}:{$server['port']}/status/sessions?X-Plex-Token={$server['token']}";
+            $headers = [
+                'Accept: application/json',
+                'X-Plex-Token: ' . $server['token']
+            ];
+            break;
+
+        case 'emby':
+            $url = "$protocol://{$server['host']}:{$server['port']}/emby/Sessions?api_key={$server['token']}";
+            $headers = [];
+            break;
+
+        case 'jellyfin':
+            $url = "$protocol://{$server['host']}:{$server['port']}/Sessions";
+            $headers = ["X-Emby-Token: {$server['token']}"];
+            break;
+
+        default:
+            return null;
+    }
 
     $ch = curl_init();
     curl_setopt($ch, CURLOPT_URL, $url);
@@ -62,33 +97,49 @@ function fetchPlexStreams($server) {
     curl_setopt($ch, CURLOPT_TIMEOUT, 10);
     curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
     curl_setopt($ch, CURLOPT_SSL_VERIFYHOST, false);
-    curl_setopt($ch, CURLOPT_HTTPHEADER, [
-        'Accept: application/json',
-        'X-Plex-Token: ' . $server['token']
-    ]);
 
-    $response = curl_exec($ch);
-    $http_code = curl_getinfo($ch, CURLINFO_HTTP_CODE);
-    $curl_error = curl_error($ch);
-    curl_close($ch);
+    if (!empty($headers)) {
+        curl_setopt($ch, CURLOPT_HTTPHEADER, $headers);
+    }
 
+    return $ch;
+}
+
+/**
+ * Process response for a specific server type
+ */
+function processServerResponse($server, $response, $http_code, $curl_error) {
     if ($curl_error) {
-        error_log("Plex connection error for {$server['name']}: $curl_error");
+        $serverType = ucfirst($server['type']);
+        error_log("$serverType connection error for {$server['name']}: $curl_error");
         return ['error' => "Connection error: $curl_error"];
     }
 
     if ($http_code !== 200 || !$response) {
-        error_log("Plex HTTP error for {$server['name']}: HTTP $http_code");
+        $serverType = ucfirst($server['type']);
+        error_log("$serverType HTTP error for {$server['name']}: HTTP $http_code");
         return ['error' => "HTTP $http_code"];
     }
-    
+
+    // Delegate to the appropriate parsing function
+    if ($server['type'] === 'plex') {
+        return parsePlexResponse($server, $response);
+    } else {
+        return parseEmbyJellyfinResponse($server, $response);
+    }
+}
+
+/**
+ * Parse Plex response into streams array
+ */
+function parsePlexResponse($server, $response) {
     $data = json_decode($response, true);
     $streams = [];
-    
+
     if (isset($data['MediaContainer']['Metadata'])) {
         foreach ($data['MediaContainer']['Metadata'] as $session) {
             $title = $session['title'] ?? 'Unknown';
-            
+
             // Handle TV shows
             if (isset($session['grandparentTitle'])) {
                 $title = $session['grandparentTitle'] . ' - ' . $title;
@@ -96,23 +147,23 @@ function fetchPlexStreams($server) {
                     $title = $session['grandparentTitle'] . " - S{$session['parentIndex']}E{$session['index']}";
                 }
             }
-            
+
             $user = $session['User']['title'] ?? 'Unknown';
             $device = $session['Player']['device'] ?? $session['Player']['product'] ?? 'Unknown';
             $state = $session['Player']['state'] ?? 'playing';
-            
+
             // Time info (Plex uses milliseconds)
             $viewOffset = isset($session['viewOffset']) ? $session['viewOffset'] / 1000 : 0;
             $duration = isset($session['duration']) ? $session['duration'] / 1000 : 0;
-            
+
             // Transcode detection and details
             $isTranscoding = false;
             $transcodeDetails = [];
-            
+
             if (isset($session['TranscodeSession'])) {
                 $isTranscoding = true;
                 $ts = $session['TranscodeSession'];
-                
+
                 // Video transcode info
                 if (isset($ts['videoDecision']) && $ts['videoDecision'] === 'transcode') {
                     $transcodeDetails[] = "Video: Transcoding";
@@ -124,20 +175,20 @@ function fetchPlexStreams($server) {
                 } elseif (isset($ts['videoDecision'])) {
                     $transcodeDetails[] = "Video: " . ucfirst($ts['videoDecision']);
                 }
-                
+
                 // Audio transcode info
                 if (isset($ts['audioDecision']) && $ts['audioDecision'] === 'transcode') {
                     $transcodeDetails[] = "Audio: Transcoding";
                 } elseif (isset($ts['audioDecision'])) {
                     $transcodeDetails[] = "Audio: " . ucfirst($ts['audioDecision']);
                 }
-                
+
                 // Transcode reason if available
                 if (isset($ts['transcodeHwFullPipeline'])) {
                     $transcodeDetails[] = $ts['transcodeHwFullPipeline'] ? "Full HW Pipeline" : "Partial HW";
                 }
             }
-            
+
             $streams[] = [
                 'server_name' => $server['name'],
                 'server_type' => 'plex',
@@ -152,71 +203,55 @@ function fetchPlexStreams($server) {
             ];
         }
     }
-    
+
     return ['streams' => $streams];
 }
 
 /**
- * Fetch streams from Emby server
+ * Parse Emby/Jellyfin response into streams array
  */
-function fetchEmbyStreams($server) {
-    $protocol = ($server['ssl'] === '1' || $server['ssl'] === true) ? 'https' : 'http';
-    $url = "$protocol://{$server['host']}:{$server['port']}/emby/Sessions?api_key={$server['token']}";
-
-    $ch = curl_init();
-    curl_setopt($ch, CURLOPT_URL, $url);
-    curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-    curl_setopt($ch, CURLOPT_CONNECTTIMEOUT, 5);
-    curl_setopt($ch, CURLOPT_TIMEOUT, 10);
-    curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
-    curl_setopt($ch, CURLOPT_SSL_VERIFYHOST, false);
-
-    $response = curl_exec($ch);
-    $http_code = curl_getinfo($ch, CURLINFO_HTTP_CODE);
-    $curl_error = curl_error($ch);
-    curl_close($ch);
-
-    if ($curl_error) {
-        error_log("Emby connection error for {$server['name']}: $curl_error");
-        return ['error' => "Connection error: $curl_error"];
-    }
-
-    if ($http_code !== 200 || !$response) {
-        error_log("Emby HTTP error for {$server['name']}: HTTP $http_code");
-        return ['error' => "HTTP $http_code"];
-    }
-    
+function parseEmbyJellyfinResponse($server, $response) {
     $sessions = json_decode($response, true);
     $streams = [];
-    
+
     if ($sessions) {
         foreach ($sessions as $session) {
             if (!isset($session['NowPlayingItem'])) continue;
-            
+
             $item = $session['NowPlayingItem'];
             $title = $item['Name'] ?? 'Unknown';
-            
-            // Handle TV shows
+
+            // Handle TV shows - include episode numbering for consistency with Plex
             if (isset($item['SeriesName'])) {
-                $title = $item['SeriesName'] . ' - ' . $title;
+                $seriesTitle = $item['SeriesName'];
+
+                // Add season/episode numbering if available
+                if (isset($item['ParentIndexNumber']) && isset($item['IndexNumber'])) {
+                    $season = str_pad($item['ParentIndexNumber'], 2, '0', STR_PAD_LEFT);
+                    $episode = str_pad($item['IndexNumber'], 2, '0', STR_PAD_LEFT);
+                    $title = "$seriesTitle - S{$season}E{$episode}";
+                } else {
+                    // Fallback to episode title if numbering not available
+                    $title = "$seriesTitle - $title";
+                }
             }
-            
+
             $user = $session['UserName'] ?? 'Unknown';
             $device = $session['DeviceName'] ?? 'Unknown';
             $isPaused = isset($session['PlayState']['IsPaused']) && $session['PlayState']['IsPaused'];
-            
-            // Time info (Emby uses ticks - 10,000,000 ticks = 1 second)
+
+            // Time info (Emby/Jellyfin use ticks - 10,000,000 ticks = 1 second)
             $position = isset($session['PlayState']['PositionTicks']) ? $session['PlayState']['PositionTicks'] / 10000000 : 0;
             $duration = isset($item['RunTimeTicks']) ? $item['RunTimeTicks'] / 10000000 : 0;
-            
+
             // Transcode detection and details
             $playMethod = $session['PlayState']['PlayMethod'] ?? 'DirectPlay';
             $isTranscoding = ($playMethod === 'Transcode');
             $transcodeDetails = [];
-            
+
             if ($isTranscoding && isset($session['TranscodingInfo'])) {
                 $ti = $session['TranscodingInfo'];
-                
+
                 if (isset($ti['IsVideoDirect'])) {
                     $transcodeDetails[] = $ti['IsVideoDirect'] ? "Video: Direct Stream" : "Video: Transcoding";
                 }
@@ -237,10 +272,10 @@ function fetchEmbyStreams($server) {
             } else {
                 $transcodeDetails[] = "Direct Play";
             }
-            
+
             $streams[] = [
                 'server_name' => $server['name'],
-                'server_type' => 'emby',
+                'server_type' => $server['type'],
                 'title' => $title,
                 'user' => $user,
                 'device' => $device,
@@ -252,138 +287,57 @@ function fetchEmbyStreams($server) {
             ];
         }
     }
-    
+
     return ['streams' => $streams];
 }
 
-/**
- * Fetch streams from Jellyfin server
- */
-function fetchJellyfinStreams($server) {
-    $protocol = ($server['ssl'] === '1' || $server['ssl'] === true) ? 'https' : 'http';
-    $url = "$protocol://{$server['host']}:{$server['port']}/Sessions";
-
-    $ch = curl_init();
-    curl_setopt($ch, CURLOPT_URL, $url);
-    curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-    curl_setopt($ch, CURLOPT_CONNECTTIMEOUT, 5);
-    curl_setopt($ch, CURLOPT_TIMEOUT, 10);
-    curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
-    curl_setopt($ch, CURLOPT_SSL_VERIFYHOST, false);
-    curl_setopt($ch, CURLOPT_HTTPHEADER, [
-        "X-Emby-Token: {$server['token']}"
-    ]);
-
-    $response = curl_exec($ch);
-    $http_code = curl_getinfo($ch, CURLINFO_HTTP_CODE);
-    $curl_error = curl_error($ch);
-    curl_close($ch);
-
-    if ($curl_error) {
-        error_log("Jellyfin connection error for {$server['name']}: $curl_error");
-        return ['error' => "Connection error: $curl_error"];
-    }
-
-    if ($http_code !== 200 || !$response) {
-        error_log("Jellyfin HTTP error for {$server['name']}: HTTP $http_code");
-        return ['error' => "HTTP $http_code"];
-    }
-    
-    $sessions = json_decode($response, true);
-    $streams = [];
-    
-    if ($sessions) {
-        foreach ($sessions as $session) {
-            if (!isset($session['NowPlayingItem'])) continue;
-            
-            $item = $session['NowPlayingItem'];
-            $title = $item['Name'] ?? 'Unknown';
-            
-            // Handle TV shows
-            if (isset($item['SeriesName'])) {
-                $title = $item['SeriesName'] . ' - ' . $title;
-            }
-            
-            $user = $session['UserName'] ?? 'Unknown';
-            $device = $session['DeviceName'] ?? 'Unknown';
-            $isPaused = isset($session['PlayState']['IsPaused']) && $session['PlayState']['IsPaused'];
-            
-            // Time info (Jellyfin uses ticks - 10,000,000 ticks = 1 second)
-            $position = isset($session['PlayState']['PositionTicks']) ? $session['PlayState']['PositionTicks'] / 10000000 : 0;
-            $duration = isset($item['RunTimeTicks']) ? $item['RunTimeTicks'] / 10000000 : 0;
-            
-            // Transcode detection and details
-            $playMethod = $session['PlayState']['PlayMethod'] ?? 'DirectPlay';
-            $isTranscoding = ($playMethod === 'Transcode');
-            $transcodeDetails = [];
-            
-            if ($isTranscoding && isset($session['TranscodingInfo'])) {
-                $ti = $session['TranscodingInfo'];
-                
-                if (isset($ti['IsVideoDirect'])) {
-                    $transcodeDetails[] = $ti['IsVideoDirect'] ? "Video: Direct Stream" : "Video: Transcoding";
-                }
-                if (isset($ti['IsAudioDirect'])) {
-                    $transcodeDetails[] = $ti['IsAudioDirect'] ? "Audio: Direct Stream" : "Audio: Transcoding";
-                }
-                if (isset($ti['VideoCodec'])) {
-                    $transcodeDetails[] = "Codec: " . strtoupper($ti['VideoCodec']);
-                }
-                if (isset($ti['TranscodeReasons']) && is_array($ti['TranscodeReasons'])) {
-                    $transcodeDetails[] = "Reason: " . implode(', ', $ti['TranscodeReasons']);
-                }
-                if (isset($ti['HardwareAccelerationType']) && $ti['HardwareAccelerationType']) {
-                    $transcodeDetails[] = "HW Accel: " . $ti['HardwareAccelerationType'];
-                }
-            } elseif ($playMethod === 'DirectStream') {
-                $transcodeDetails[] = "Direct Stream (Container remux)";
-            } else {
-                $transcodeDetails[] = "Direct Play";
-            }
-            
-            $streams[] = [
-                'server_name' => $server['name'],
-                'server_type' => 'jellyfin',
-                'title' => $title,
-                'user' => $user,
-                'device' => $device,
-                'state' => $isPaused ? 'paused' : 'playing',
-                'progress' => $position,
-                'duration' => $duration,
-                'transcoding' => $isTranscoding,
-                'transcode_details' => $transcodeDetails
-            ];
-        }
-    }
-    
-    return ['streams' => $streams];
-}
-
-// Fetch from all servers
+// Fetch from all servers in parallel using curl_multi
 $allStreams = [];
 $errors = [];
 
-foreach ($servers as $server) {
-    switch ($server['type']) {
-        case 'plex':
-            $result = fetchPlexStreams($server);
-            break;
-        case 'emby':
-            $result = fetchEmbyStreams($server);
-            break;
-        case 'jellyfin':
-            $result = fetchJellyfinStreams($server);
-            break;
-        default:
-            $result = ['error' => 'Unknown server type'];
+// Build curl handles for all servers
+$mh = curl_multi_init();
+$handles = [];
+$serverMap = [];
+
+foreach ($servers as $index => $server) {
+    $ch = buildCurlHandle($server);
+    if ($ch !== null) {
+        $handles[$index] = $ch;
+        $serverMap[$index] = $server;
+        curl_multi_add_handle($mh, $ch);
+    } else {
+        $errors[] = "{$server['name']}: Unknown server type";
     }
-    
+}
+
+// Execute all queries simultaneously
+$running = null;
+do {
+    curl_multi_exec($mh, $running);
+    curl_multi_select($mh);
+} while ($running > 0);
+
+// Collect results from all servers
+foreach ($handles as $index => $ch) {
+    $server = $serverMap[$index];
+    $response = curl_multi_getcontent($ch);
+    $http_code = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+    $curl_error = curl_error($ch);
+
+    $result = processServerResponse($server, $response, $http_code, $curl_error);
+
     if (isset($result['error'])) {
         $errors[] = "{$server['name']}: {$result['error']}";
     } elseif (isset($result['streams'])) {
         $allStreams = array_merge($allStreams, $result['streams']);
     }
+
+    curl_multi_remove_handle($mh, $ch);
+    curl_close($ch);
 }
+
+curl_multi_close($mh);
 
 // Output
 if (empty($allStreams)) {

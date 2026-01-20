@@ -51,7 +51,6 @@ After installation, navigate to **Settings > Active Streams Settings** to config
 - **Widget Title**: Choose from "Active Streams", "Video Streams", "Plex Streams", "Emby Streams", or "Jellyfin Streams"
 - **Widget Icon**: Select Plex, Emby, Jellyfin, or a generic film icon
 - **Refresh Interval**: How often to poll servers (1-60 seconds)
-- **Display Dashboard Widget**: Toggle widget visibility
 
 ### Adding Media Servers
 
@@ -119,9 +118,9 @@ For each active stream, the widget shows:
 - Check server logs for any API errors
 
 ### Widget Not Appearing
-- Ensure "Display Dashboard Widget" is set to "On"
 - Refresh the Unraid dashboard
 - Try logging out and back into Unraid
+- Check browser console for any JavaScript errors
 
 ## License
 

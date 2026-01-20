@@ -92,15 +92,18 @@ rm -rf "&emhttp;"
 # Remove downloaded packages
 rm -f "&plgPATH;/&name;-*.txz"
 
-# Remove configuration files and plugin config directory
-rm -f "&plgPATH;/activestreams.cfg"
-rm -f "&plgPATH;/servers.json"
-rmdir "&plgPATH;" 2>/dev/null
+# Configuration files are preserved for future reinstallation
+# To manually remove configs, delete: &plgPATH;/activestreams.cfg and &plgPATH;/servers.json
 
 echo ""
 echo "-----------------------------------------------------------"
 echo " &name; has been uninstalled."
-echo " All configuration files have been removed."
+echo " Your server configurations have been preserved at:"
+echo " &plgPATH;/"
+echo ""
+echo " To completely remove all settings, manually delete:"
+echo " &plgPATH;/activestreams.cfg"
+echo " &plgPATH;/servers.json"
 echo "-----------------------------------------------------------"
 echo ""
 </INLINE>
