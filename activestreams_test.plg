@@ -2,8 +2,8 @@
 <!DOCTYPE PLUGIN [
 <!ENTITY name      "activestreams">
 <!ENTITY author    "gthrift">
-<!ENTITY version   "2026.01.06">
-<!ENTITY md5       "b93e064095d8fa03dc337e0165cbecd5">
+<!ENTITY version   "2026.01.07">
+<!ENTITY md5       "17e88da472d96a1622a68adfbf00e87c">
 <!ENTITY launch    "Settings/ActiveStreamsSettings">
 <!ENTITY gitURL    "https://raw.githubusercontent.com/gthrift/activestreams-unraid/main">
 <!ENTITY pluginURL "&gitURL;/activestreams.plg">
@@ -23,6 +23,9 @@
         min="6.12.0">
 
 <CHANGES>
+###2026.01.07
+- Rename ActiveStreams.page to ActiveStreamsDashboard.page to resolve issue with Dynamix Active Streams
+
 ###2026.01.06
 - Testing new build script
 
