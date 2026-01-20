@@ -1,4 +1,4 @@
-name: Build Plugin Release
+name: Build Plugin Test Release
 
 on:
   push:
