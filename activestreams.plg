@@ -88,9 +88,6 @@ echo "Uninstalling &name;..."
 # Remove Plugin Package
 removepkg "&plgPATH;/&name;-&version;.txz" 2>/dev/null
 
-# Remove Plugin Files (in case removepkg didn't clean up)
-rm -rf "&emhttp;"
-
 # Remove downloaded packages
 rm -f "&plgPATH;/&name;-*.txz"
 
