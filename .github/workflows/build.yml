@@ -44,87 +44,56 @@ jobs:
           
           echo "Building ${PLUGIN_NAME} version ${VERSION}..."
           
-          # Create archive directory
+          # Create directories
           mkdir -p archive
-          
-          # Create temporary directory structure
           TEMP_DIR=$(mktemp -d)
           PLUGIN_DIR="${TEMP_DIR}/usr/local/emhttp/plugins/${PLUGIN_NAME}"
           mkdir -p "${PLUGIN_DIR}"
           
-          echo "Created temp directory: ${TEMP_DIR}"
-          echo "Plugin directory: ${PLUGIN_DIR}"
+          # --- COPY FILES ---
+          # Use -v to see what is happening in the logs
+          # We copy EVERYTHING in src/ to catch hidden .sh files or subfolders
+          cp -r -v src/* "${PLUGIN_DIR}/" 2>/dev/null || true
+          cp -v metadata/*.png "${PLUGIN_DIR}/" 2>/dev/null || true
+
+          # --- FIX PERMISSIONS (CRITICAL FOR UNRAID) ---
+          echo "Setting permissions..."
+          # Directories: 755 (rwxr-xr-x) - allows traversal
+          find "${TEMP_DIR}" -type d -exec chmod 755 {} \;
+          # Files: 644 (rw-r--r--) - allows WebGUI/PHP to read them
+          find "${TEMP_DIR}" -type f -exec chmod 644 {} \;
           
-          # Copy source files with error checking
-          echo "Copying .page files..."
-          if ls src/*.page 1> /dev/null 2>&1; then
-            cp src/*.page "${PLUGIN_DIR}/"
-            echo "  Copied .page files"
-          else
-            echo "  WARNING: No .page files found in src/"
-          fi
+          # If you have executable scripts (like .sh), make them executable:
+          # find "${PLUGIN_DIR}" -name "*.sh" -exec chmod 755 {} \;
           
-          echo "Copying .php files..."
-          if ls src/*.php 1> /dev/null 2>&1; then
-            cp src/*.php "${PLUGIN_DIR}/"
-            echo "  Copied .php files"
-          else
-            echo "  WARNING: No .php files found in src/"
-          fi
-          
-          echo "Copying .png files..."
-          if ls metadata/*.png 1> /dev/null 2>&1; then
-            cp metadata/*.png "${PLUGIN_DIR}/"
-            echo "  Copied .png files"
-          else
-            echo "  WARNING: No .png files found in metadata/"
-          fi
-          
-          # Show what we're packaging
-          echo ""
-          echo "=== Files to be packaged ==="
-          find "${TEMP_DIR}" -type f
-          
-          # Check if we have any files to package
+          # --- CLEANUP ---
+          # Remove Mac metadata files if they exist (prevents garbage in plugin)
+          find "${TEMP_DIR}" -name "._*" -delete
+
+          # --- VERIFICATION ---
           FILE_COUNT=$(find "${PLUGIN_DIR}" -type f | wc -l)
           if [ "$FILE_COUNT" -eq 0 ]; then
-            echo "ERROR: No files to package!"
+            echo "ERROR: No files were copied to ${PLUGIN_DIR}"
             exit 1
           fi
           
-          # Create txz archive
+          # --- CREATE ARCHIVE ---
           ARCHIVE_NAME="${PLUGIN_NAME}-${VERSION}.txz"
-          echo ""
           echo "Creating archive: ${ARCHIVE_NAME}"
           
           cd "${TEMP_DIR}"
-          tar -cJf "${GITHUB_WORKSPACE}/archive/${ARCHIVE_NAME}" .
+          # FORCE ROOT OWNERSHIP HERE
+          tar --owner=0 --group=0 -cJf "${GITHUB_WORKSPACE}/archive/${ARCHIVE_NAME}" .
           cd "${GITHUB_WORKSPACE}"
-          
-          # Verify archive was created
-          if [ ! -f "archive/${ARCHIVE_NAME}" ]; then
-            echo "ERROR: Failed to create archive!"
-            exit 1
-          fi
-          
-          echo "Archive created successfully: $(ls -lh archive/${ARCHIVE_NAME})"
           
           # Generate MD5
           MD5_HASH=$(md5sum "archive/${ARCHIVE_NAME}" | awk '{print $1}')
           echo "${MD5_HASH}" > "archive/${PLUGIN_NAME}-${VERSION}.md5"
           
-          # Output for next steps
+          # Output env vars
           echo "ARCHIVE_NAME=${ARCHIVE_NAME}" >> $GITHUB_ENV
           echo "MD5_HASH=${MD5_HASH}" >> $GITHUB_ENV
           
-          echo ""
-          echo "=========================================="
-          echo "Build complete!"
-          echo "Archive: archive/${ARCHIVE_NAME}"
-          echo "MD5: ${MD5_HASH}"
-          echo "=========================================="
-          
-          # Clean up
           rm -rf "${TEMP_DIR}"
       
       - name: Update plg file with new version, MD5, and release notes
