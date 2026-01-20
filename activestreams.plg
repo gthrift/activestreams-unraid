@@ -47,8 +47,8 @@ A plugin to create a dashboard widget that shows your active streams from Plex, 
 </OVERVIEW>
 
 <!-- Download and install the plugin package -->
-<FILE Name="&plgPATH;/&plgNAME;.txz" Run="upgradepkg --install-new --reinstall">
-        <URL>&gitURL;/archive/&plgNAME;.txz</URL>
+<FILE Name="&plgPATH;/&name;-&version;.txz" Run="upgradepkg --install-new --reinstall">
+        <URL>&archive;</URL>
         <MD5>&md5;</MD5>
 </FILE>
 
