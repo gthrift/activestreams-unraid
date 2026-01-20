@@ -2,7 +2,7 @@
 <!DOCTYPE PLUGIN [
 <!ENTITY name      "activestreams">
 <!ENTITY author    "gthrift">
-<!ENTITY version   "2026.01.03">
+<!ENTITY version   "2026.01.04">
 <!ENTITY md5       "81cccfd423a71400efef7a1546155eb6">
 <!ENTITY launch    "Settings/ActiveStreamsSettings">
 <!ENTITY gitURL    "https://raw.githubusercontent.com/gthrift/activestreams-unraid/main">
@@ -23,9 +23,14 @@
         min="6.12.0">
 
 <CHANGES>
+###2026.01.04
+- CRITICAL BUG FIX: Removed recursive chown commands that were breaking SMB access
+ - Fixed issue where plugin installation would cause loss of SMB access to server
+ - Removed unnecessary file ownership changes that conflicted with Unraid system
+
 ###2026.01.03
-- Bug fixes and improvements 
- - Better logging and error handling 
+- Bug fixes and improvements
+ - Better logging and error handling
  - Removed widget on/of toggle
 
 ###2026.01.02
@@ -71,15 +76,11 @@ if [ ! -f "&plgPATH;/servers.json" ]; then
     echo "[]" &gt; "&plgPATH;/servers.json"
 fi
 
-# 4. Fix Permissions and Ownership
-# Set ownership to root for plugin files
-chown -R root:root "&emhttp;"
+# 4. Fix Permissions
 # Set directory permissions
 chmod 755 "&emhttp;"
 # Set file permissions (non-executable)
 find "&emhttp;" -type f -exec chmod 644 {} \;
-# Set ownership for config directory and files
-chown -R root:root "&plgPATH;"
 # Set config directory and file permissions
 chmod 755 "&plgPATH;"
 chmod 644 "&plgPATH;/activestreams.cfg" 2>/dev/null
