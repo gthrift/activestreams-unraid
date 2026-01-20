@@ -5,7 +5,7 @@
 <!ENTITY version   "2026.01.04">
 <!ENTITY md5       "b2f5a8c1beabcaf7cd7176d3b1234253">
 <!ENTITY launch    "Settings/ActiveStreamsSettings">
-<!ENTITY gitURL    "https://raw.githubusercontent.com/gthrift/activestreams-unraid/main">
+<!ENTITY gitURL    "https://raw.githubusercontent.com/gthrift/activestreams-unraid/refs/heads/2026.01.04">
 <!ENTITY pluginURL "&gitURL;/activestreams.plg">
 <!ENTITY archive   "&gitURL;/archive/&name;-&version;.txz">
 <!ENTITY emhttp    "/usr/local/emhttp/plugins/&name;">
