@@ -60,9 +60,14 @@ if [ ! -f "&plgPATH;/servers.json" ]; then
 fi
 
 # 4. Fix Permissions
-chmod -R 755 "&emhttp;"
-chmod -R 644 "&emhttp;"/*.php "&emhttp;"/*.page "&emhttp;"/*.png 2>/dev/null
-chmod -R 755 "&plgPATH;"
+# Set directory permissions
+chmod 755 "&emhttp;"
+# Set file permissions (non-executable)
+find "&emhttp;" -type f -exec chmod 644 {} \;
+# Set config directory and file permissions
+chmod 755 "&plgPATH;"
+chmod 644 "&plgPATH;/activestreams.cfg" 2>/dev/null
+chmod 644 "&plgPATH;/servers.json" 2>/dev/null
 
 echo ""
 echo "-----------------------------------------------------------"
@@ -84,12 +89,18 @@ removepkg "&plgPATH;/&name;-&version;.txz" 2>/dev/null
 # Remove Plugin Files (in case removepkg didn't clean up)
 rm -rf "&emhttp;"
 
-# Remove downloaded package
+# Remove downloaded packages
 rm -f "&plgPATH;/&name;-*.txz"
+
+# Remove configuration files and plugin config directory
+rm -f "&plgPATH;/activestreams.cfg"
+rm -f "&plgPATH;/servers.json"
+rmdir "&plgPATH;" 2>/dev/null
 
 echo ""
 echo "-----------------------------------------------------------"
 echo " &name; has been uninstalled."
+echo " All configuration files have been removed."
 echo "-----------------------------------------------------------"
 echo ""
 </INLINE>
