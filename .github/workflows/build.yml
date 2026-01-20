@@ -145,16 +145,29 @@ jobs:
           # Add release notes if provided (for manual triggers only)
           if [ "${{ github.event_name }}" = "workflow_dispatch" ] && [ -n "${RELEASE_NOTES}" ]; then
             echo "  Adding release notes..."
-            
+
             # Convert \n to actual newlines
-            FORMATTED_NOTES=$(echo "${RELEASE_NOTES}" | sed 's/\\n/\n/g')
-            
-            # Create the new changelog entry
-            NEW_ENTRY="###${VERSION}\n${FORMATTED_NOTES}\n\n"
-            
-            # Insert after <CHANGES> tag
-            sed -i "s|<CHANGES>|<CHANGES>\n${NEW_ENTRY}|" activestreams.plg
-            
+            FORMATTED_NOTES=$(printf '%s' "${RELEASE_NOTES}" | sed 's/\\n/\n/g')
+
+            # Create the new changelog entry in a temp file to avoid sed escaping issues
+            TEMP_FILE=$(mktemp)
+            printf '###%s\n%s\n\n' "${VERSION}" "${FORMATTED_NOTES}" > "${TEMP_FILE}"
+
+            # Use awk to insert content after <CHANGES> tag (more robust than sed for this use case)
+            awk '
+            /<CHANGES>/ {
+                print
+                while ((getline line < "'"${TEMP_FILE}"'") > 0) {
+                    print line
+                }
+                close("'"${TEMP_FILE}"'")
+                next
+            }
+            {print}
+            ' activestreams.plg > activestreams.plg.tmp && mv activestreams.plg.tmp activestreams.plg
+
+            rm "${TEMP_FILE}"
+
             echo "  Release notes added"
           fi
           
