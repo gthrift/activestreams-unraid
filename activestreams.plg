@@ -64,11 +64,15 @@ if [ ! -f "&plgPATH;/servers.json" ]; then
     echo "[]" &gt; "&plgPATH;/servers.json"
 fi
 
-# 4. Fix Permissions
+# 4. Fix Permissions and Ownership
+# Set ownership to root for plugin files
+chown -R root:root "&emhttp;"
 # Set directory permissions
 chmod 755 "&emhttp;"
 # Set file permissions (non-executable)
 find "&emhttp;" -type f -exec chmod 644 {} \;
+# Set ownership for config directory and files
+chown -R root:root "&plgPATH;"
 # Set config directory and file permissions
 chmod 755 "&plgPATH;"
 chmod 644 "&plgPATH;/activestreams.cfg" 2>/dev/null
