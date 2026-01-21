@@ -118,9 +118,7 @@ For each active stream, the widget shows:
 - Check server logs for any API errors
 
 ### Widget Not Appearing
-- Refresh the Unraid dashboard
-- Try logging out and back into Unraid
-- Check browser console for any JavaScript errors
+- Ensure you have the latest version installed
 
 ## License
 
