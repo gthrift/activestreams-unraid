@@ -1,6 +1,6 @@
 Menu="Utilities"
 Title="Active Streams Settings"
-Icon="streams.png"
+Icon="film"
 ---
 <?php
     $plugin = "activestreams";
