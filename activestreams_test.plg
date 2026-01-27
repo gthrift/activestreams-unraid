@@ -2,70 +2,114 @@
 <!DOCTYPE PLUGIN [
 <!ENTITY name      "activestreams">
 <!ENTITY author    "gthrift">
-<!ENTITY version   "2026.01.07">
-<!ENTITY md5       "17e88da472d96a1622a68adfbf00e87c">
+<!ENTITY version   "2026.01.08-TEST">
 <!ENTITY launch    "Settings/ActiveStreamsSettings">
-<!ENTITY gitURL    "https://raw.githubusercontent.com/gthrift/activestreams-unraid/main">
-<!ENTITY pluginURL "&gitURL;/activestreams.plg">
-<!ENTITY archive   "&gitURL;/archive/&name;-&version;.txz">
 <!ENTITY emhttp    "/usr/local/emhttp/plugins/&name;">
 <!ENTITY plgPATH   "/boot/config/plugins/&name;">
+<!ENTITY srcPATH   "/boot/config/plugins/&name;/src">
 ]>
 
-<PLUGIN name="&name;" 
-        author="&author;" 
-        version="&version;" 
-        launch="&launch;" 
-        pluginURL="&pluginURL;"
+<PLUGIN name="&name;"
+        author="&author;"
+        version="&version;"
+        launch="&launch;"
+        pluginURL="https://raw.githubusercontent.com/gthrift/activestreams-unraid/main/activestreams_test.plg"
         support="https://forums.unraid.net/topic/196336-plugin-active-streams-display-your-active-embyjellyfinplex-streams-on-your-dashboard/"
         IconFA="film"
-        icon="streams.png" 
+        icon="streams.png"
         min="6.12.0">
 
 <CHANGES>
+###2026.01.08-TEST
+- TEST VERSION: Installs directly from src/ directory
+- Security improvements: Token encryption, CSRF protection, SSL verification
+- DO NOT USE IN PRODUCTION
+
 ###2026.01.07
 - Rename ActiveStreams.page to ActiveStreamsDashboard.page to resolve issue with Dynamix Active Streams
-
-###2026.01.06
-- Testing new build script
-
-###2026.01.05
-- Fix install script that breaks SMB
-
-###2026.01.04
-- Fix permissions issues
-
-###2026.01.03
-- Bug fixes and improvements
- - Better logging and error handling
- - Removed widget on/of toggle
-
-###2026.01.02
-- Bug fixes and improvements
-
-###2026.01.01
-- Initial Release
 </CHANGES>
 
 <OVERVIEW>
-A plugin to create a dashboard widget that shows your active streams from Plex, Emby, and Jellyfin servers
+TEST VERSION - Installs directly from src/ directory for development/testing.
+
+A plugin to create a dashboard widget that shows your active streams from Plex, Emby, and Jellyfin servers.
+
+TESTING SETUP:
+1. Clone the repo to your Unraid USB drive
+2. Update &srcPATH; entity above to point to your local src/ directory
+3. Install this test plugin
+4. Test your changes
+5. Uninstall test plugin before installing production version
 </OVERVIEW>
 
 <FILE Run="/bin/bash">
         <INLINE>
+                echo "================================================"
+                echo " Installing TEST version of Active Streams"
+                echo " This installs from local src/ directory"
+                echo "================================================"
+
                 # Remove old webUI files to prevent conflicts
-                # This runs before the new package is installed
                 rm -f "&emhttp;/*.page"
                 rm -f "&emhttp;/*.php"
 
-                # Create Config Directory before download attempts to write to it
+                # Create plugin directory
+                mkdir -p "&emhttp;"
+
+                # Create Config Directory
                 mkdir -p "&plgPATH;"
         </INLINE>
 </FILE>
 
-<FILE Name="&plgPATH;/&name;-&version;.txz" Run="upgradepkg --install-new --reinstall">
-    <URL>&archive;</URL>
-    <MD5>&md5;</MD5>
+<FILE Run="/bin/bash">
+        <INLINE>
+                # Copy files from src/ directory
+                # UPDATE THIS PATH to point to your local repo's src/ directory
+                SRC_DIR="&srcPATH;"
+
+                # Alternative: Specify absolute path here
+                # SRC_DIR="/mnt/user/development/activestreams-unraid/src"
+
+                if [ ! -d "$SRC_DIR" ]; then
+                    echo "ERROR: Source directory not found: $SRC_DIR"
+                    echo "Please update the srcPATH entity in this .plg file"
+                    echo "to point to your local activestreams-unraid/src directory"
+                    exit 1
+                fi
+
+                echo "Copying files from: $SRC_DIR"
+
+                # Copy PHP files
+                if [ -f "$SRC_DIR/activestreams_api.php" ]; then
+                    cp "$SRC_DIR/activestreams_api.php" "&emhttp;/"
+                    echo "  ✓ activestreams_api.php"
+                fi
+
+                if [ -f "$SRC_DIR/activestreams_servers.php" ]; then
+                    cp "$SRC_DIR/activestreams_servers.php" "&emhttp;/"
+                    echo "  ✓ activestreams_servers.php"
+                fi
+
+                if [ -f "$SRC_DIR/activestreams_crypto.php" ]; then
+                    cp "$SRC_DIR/activestreams_crypto.php" "&emhttp;/"
+                    echo "  ✓ activestreams_crypto.php"
+                fi
+
+                # Copy page files
+                if [ -f "$SRC_DIR/ActiveStreamsDashboard.page" ]; then
+                    cp "$SRC_DIR/ActiveStreamsDashboard.page" "&emhttp;/"
+                    echo "  ✓ ActiveStreamsDashboard.page"
+                fi
+
+                if [ -f "$SRC_DIR/ActiveStreamsSettings.page" ]; then
+                    cp "$SRC_DIR/ActiveStreamsSettings.page" "&emhttp;/"
+                    echo "  ✓ ActiveStreamsSettings.page"
+                fi
+
+                echo ""
+                echo "Files installed to: &emhttp;"
+                ls -lh "&emhttp;/"
+        </INLINE>
 </FILE>
 
 <FILE Run="/bin/bash">
@@ -75,17 +119,25 @@ A plugin to create a dashboard widget that shows your active streams from Plex, 
                     echo "POLL_INTERVAL='5'" > "&plgPATH;/activestreams.cfg"
                     echo "WIDGET_ICON='streams'" >> "&plgPATH;/activestreams.cfg"
                     echo "WIDGET_TITLE='Active Streams'" >> "&plgPATH;/activestreams.cfg"
+                    echo "Created default config"
                 fi
-                
+
                 # Create empty servers config if missing
                 if [ ! -f "&plgPATH;/servers.json" ]; then
                     echo "[]" > "&plgPATH;/servers.json"
+                    echo "Created empty servers.json"
                 fi
-                
+
                 echo ""
                 echo "-----------------------------------------------------------"
-                echo " &name; has been installed."
+                echo " TEST VERSION of &name; has been installed."
                 echo " Version: &version;"
+                echo ""
+                echo " Files installed from: &srcPATH;"
+                echo " Config directory: &plgPATH;"
+                echo ""
+                echo " REMINDER: This is a TEST installation"
+                echo " Uninstall before using production version"
                 echo "-----------------------------------------------------------"
                 echo ""
         </INLINE>
@@ -93,21 +145,14 @@ A plugin to create a dashboard widget that shows your active streams from Plex, 
 
 <FILE Run="/bin/bash" Method="remove">
         <INLINE>
-                echo "Uninstalling &name;..."
+                echo "Uninstalling TEST version of &name;..."
 
-                # uninstall plugin
-                removepkg &plgPATH;/*.txz
-                
-                rm -rf &emhttp;
-                rm -rf &plgPATH;/*.txz \
-                       &plgPATH;/*.md5
-                
-                # Configuration files are preserved for future reinstallation
-                # To manually remove configs, delete: &plgPATH;/activestreams.cfg and &plgPATH;/servers.json
-                
+                # Remove plugin files
+                rm -rf "&emhttp;"
+
                 echo ""
                 echo "-----------------------------------------------------------"
-                echo " &name; has been uninstalled."
+                echo " TEST version of &name; has been uninstalled."
                 echo " Your server configurations have been preserved at:"
                 echo " &plgPATH;/"
                 echo ""

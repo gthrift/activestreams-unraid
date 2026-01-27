@@ -11,6 +11,7 @@ ini_set('log_errors', '1');
 
 $cfg_file = "/boot/config/plugins/activestreams/activestreams.cfg";
 $servers_file = "/boot/config/plugins/activestreams/servers.json";
+$encryption_key_file = "/boot/config/plugins/activestreams/.encryption_key";
 
 // Load configuration
 if (!file_exists($cfg_file)) {
@@ -20,7 +21,7 @@ if (!file_exists($cfg_file)) {
 
 $cfg = parse_ini_file($cfg_file);
 
-// Load servers
+// Load servers with token decryption
 if (!file_exists($servers_file)) {
     echo "<div style='padding:15px; text-align:center; color:#eebb00;'>
             <i class='fa fa-exclamation-triangle'></i> _(No servers configured. Please add a server in settings.)_
@@ -28,7 +29,10 @@ if (!file_exists($servers_file)) {
     exit;
 }
 
-$servers = json_decode(file_get_contents($servers_file), true);
+// Include decryption functions
+require_once __DIR__ . '/activestreams_crypto.php';
+
+$serversRaw = json_decode(file_get_contents($servers_file), true);
 
 // Check for JSON decode errors
 if (json_last_error() !== JSON_ERROR_NONE) {
@@ -39,11 +43,20 @@ if (json_last_error() !== JSON_ERROR_NONE) {
     exit;
 }
 
-if (empty($servers)) {
+if (empty($serversRaw)) {
     echo "<div style='padding:15px; text-align:center; color:#eebb00;'>
             <i class='fa fa-exclamation-triangle'></i> _(No servers configured. Please add a server in settings.)_
           </div>";
     exit;
+}
+
+// Decrypt tokens in loaded servers
+$servers = [];
+foreach ($serversRaw as $server) {
+    if (isset($server['token'])) {
+        $server['token'] = decryptToken($server['token']);
+    }
+    $servers[] = $server;
 }
 
 /**
@@ -95,8 +108,23 @@ function buildCurlHandle($server) {
     curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
     curl_setopt($ch, CURLOPT_CONNECTTIMEOUT, 5);
     curl_setopt($ch, CURLOPT_TIMEOUT, 10);
-    curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
-    curl_setopt($ch, CURLOPT_SSL_VERIFYHOST, false);
+
+    // Enable SSL verification by default for security
+    $use_ssl = ($server['ssl'] === '1' || $server['ssl'] === true);
+    if ($use_ssl) {
+        $allow_self_signed = isset($server['allow_self_signed']) &&
+                            ($server['allow_self_signed'] === '1' || $server['allow_self_signed'] === true);
+
+        if ($allow_self_signed) {
+            // User explicitly allowed self-signed certificates
+            curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
+            curl_setopt($ch, CURLOPT_SSL_VERIFYHOST, 0);
+        } else {
+            // Verify SSL certificates (secure default)
+            curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, true);
+            curl_setopt($ch, CURLOPT_SSL_VERIFYHOST, 2);
+        }
+    }
 
     if (!empty($headers)) {
         curl_setopt($ch, CURLOPT_HTTPHEADER, $headers);
