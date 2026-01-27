@@ -6,7 +6,7 @@
 <!ENTITY launch    "Settings/ActiveStreamsSettings">
 <!ENTITY emhttp    "/usr/local/emhttp/plugins/&name;">
 <!ENTITY plgPATH   "/boot/config/plugins/&name;">
-<!ENTITY srcPATH   "/boot/config/plugins/&name;/src">
+<!ENTITY srcPATH   "/home/user/activestreams-unraid/src">
 ]>
 
 <PLUGIN name="&name;"
