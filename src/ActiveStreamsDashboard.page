@@ -113,7 +113,7 @@ $mytiles[$plugin]['column1'] = <<<EOT
           <img src="{$icon_file}" class="as-icon-img icon">
           <div class='section'>
             <h3 class='tile-header-main' id='{$plugin}-dashboard-title'>
-              ({$widget_title})
+              {$widget_title}
             </h3>
             <span id="as_count_container"><span id="activestreams_count">0</span> _(Active Stream(s))_</span>
           </div>
