@@ -12,7 +12,7 @@ Markdown="false"
 <?if (!$translations):?>
     <div style="padding: 20px;">Please update Unraid to use this plugin.</div>
 <?else:?>
----
+
 <style>
     /* Section styling - uses transparent overlays to work with any theme */
     .as-section { 
