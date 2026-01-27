@@ -23,6 +23,11 @@
         min="6.12.0">
 
 <CHANGES>
+###2026.01.08
+- Fixed widget_title to remove extra characters (this will reset your widget positioning)
+- Fixed server settings window so it can be scrolled if the popup is taller than the page
+- Fixed settings page widget
+
 ###2026.01.07
 - Rename ActiveStreams.page to ActiveStreamsDashboard.page to resolve issue with Dynamix Active Streams
 
