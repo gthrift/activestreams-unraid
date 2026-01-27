@@ -105,7 +105,7 @@ Icon="streams.png"
 
 <?php
 $mytiles[$plugin]['column1'] = <<<EOT
-<tbody class="sortable" title="_{$widget_title}_">
+<tbody class="sortable" title="{$widget_title}">
   <tr>
     <td>
       <div class='tile-header' id='{$plugin}-dashboard-card'>
@@ -113,7 +113,7 @@ $mytiles[$plugin]['column1'] = <<<EOT
           <img src="{$icon_file}" class="as-icon-img icon">
           <div class='section'>
             <h3 class='tile-header-main' id='{$plugin}-dashboard-title'>
-              _({$widget_title})_
+              ({$widget_title})
             </h3>
             <span id="as_count_container"><span id="activestreams_count">0</span> _(Active Stream(s))_</span>
           </div>
