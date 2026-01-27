@@ -104,6 +104,7 @@ Markdown="false"
         border-radius: 10px; 
         min-width: 450px;
         max-width: 90%;
+        max-height: 90vh;
         border: 1px solid rgba(128,128,128,0.3);
         box-shadow: 0 10px 40px rgba(0,0,0,0.5);
         color: inherit;
