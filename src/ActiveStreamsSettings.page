@@ -334,13 +334,7 @@ if (!is_array($servers)) $servers = [];
                     <input type="checkbox" id="serverSSL"> _(Use HTTPS/SSL)_
                 </label>
             </div>
-
-            <div class="as-checkbox-row">
-                <label>
-                    <input type="checkbox" id="serverAllowSelfSigned"> _(Allow self-signed certificates (less secure))_
-                </label>
-            </div>
-
+            
             <div class="as-test-result" id="testResult"></div>
             
             <div class="as-modal-buttons">
@@ -360,7 +354,6 @@ if (!is_array($servers)) $servers = [];
 
 <script>
 var servers = <?php echo json_encode($servers); ?>;
-var csrfToken = ''; // Will be fetched on page load
 
 // Get computed background color from body and apply to modal
 $(function() {
@@ -368,19 +361,7 @@ $(function() {
     if (bgColor && bgColor !== 'rgba(0, 0, 0, 0)') {
         $('.as-modal-content').css('background-color', bgColor);
     }
-
-    // Fetch CSRF token on page load
-    fetchCsrfToken();
 });
-
-// Fetch CSRF token from server
-function fetchCsrfToken() {
-    $.get('/plugins/activestreams/activestreams_servers.php?action=get_token', function(response) {
-        if (response.csrf_token) {
-            csrfToken = response.csrf_token;
-        }
-    }, 'json');
-}
 
 function updateFormFields() {
     var type = $('#serverType').val();
@@ -422,7 +403,6 @@ function editServer(index) {
     $('#serverPort').val(server.port);
     $('#serverToken').val(server.token);
     $('#serverSSL').prop('checked', server.ssl === true || server.ssl === '1');
-    $('#serverAllowSelfSigned').prop('checked', server.allow_self_signed === true || server.allow_self_signed === '1');
     updateFormFields();
     $('#testResult').hide();
     $('#serverModal').fadeIn(200);
@@ -436,19 +416,14 @@ function deleteServer(index) {
     if (confirm('_(Are you sure you want to delete this server?)_')) {
         $.post('/plugins/activestreams/activestreams_servers.php', {
             action: 'delete',
-            index: index,
-            csrf_token: csrfToken
+            index: index
         }, function(response) {
             if (response.success) {
                 location.reload();
             } else {
                 alert('_(Error deleting server)_: ' + response.error);
             }
-        }, 'json').fail(function(xhr) {
-            if (xhr.status === 403) {
-                alert('_(Security token expired. Please refresh the page.)_');
-            }
-        });
+        }, 'json');
     }
 }
 
@@ -459,13 +434,11 @@ function testConnection() {
         host: $('#serverHost').val(),
         port: $('#serverPort').val() || getDefaultPort($('#serverType').val()),
         token: $('#serverToken').val(),
-        ssl: $('#serverSSL').is(':checked') ? '1' : '0',
-        allow_self_signed: $('#serverAllowSelfSigned').is(':checked') ? '1' : '0',
-        csrf_token: csrfToken
+        ssl: $('#serverSSL').is(':checked') ? '1' : '0'
     };
-
+    
     $('#testResult').removeClass('as-test-success as-test-error').html('<i class="fa fa-spinner fa-spin"></i> _(Testing...)_').show();
-
+    
     $.post('/plugins/activestreams/activestreams_servers.php', data, function(response) {
         if (response.success) {
             $('#testResult').removeClass('as-test-error').addClass('as-test-success')
@@ -474,14 +447,9 @@ function testConnection() {
             $('#testResult').removeClass('as-test-success').addClass('as-test-error')
                 .html('<i class="fa fa-times"></i> _(Connection failed)_: ' + response.error);
         }
-    }, 'json').fail(function(xhr) {
-        if (xhr.status === 403) {
-            $('#testResult').removeClass('as-test-success').addClass('as-test-error')
-                .html('<i class="fa fa-times"></i> _(Security token expired. Please refresh the page.)_');
-        } else {
-            $('#testResult').removeClass('as-test-success').addClass('as-test-error')
-                .html('<i class="fa fa-times"></i> _(Request failed)_');
-        }
+    }, 'json').fail(function() {
+        $('#testResult').removeClass('as-test-success').addClass('as-test-error')
+            .html('<i class="fa fa-times"></i> _(Request failed)_');
     });
 }
 
@@ -491,7 +459,7 @@ function getDefaultPort(type) {
 
 $('#serverForm').on('submit', function(e) {
     e.preventDefault();
-
+    
     var data = {
         action: $('#editIndex').val() === '-1' ? 'add' : 'edit',
         index: $('#editIndex').val(),
@@ -500,22 +468,16 @@ $('#serverForm').on('submit', function(e) {
         host: $('#serverHost').val(),
         port: $('#serverPort').val() || getDefaultPort($('#serverType').val()),
         token: $('#serverToken').val(),
-        ssl: $('#serverSSL').is(':checked') ? '1' : '0',
-        allow_self_signed: $('#serverAllowSelfSigned').is(':checked') ? '1' : '0',
-        csrf_token: csrfToken
+        ssl: $('#serverSSL').is(':checked') ? '1' : '0'
     };
-
+    
     $.post('/plugins/activestreams/activestreams_servers.php', data, function(response) {
         if (response.success) {
             location.reload();
         } else {
             alert('_(Error saving server)_: ' + response.error);
         }
-    }, 'json').fail(function(xhr) {
-        if (xhr.status === 403) {
-            alert('_(Security token expired. Please refresh the page.)_');
-        }
-    });
+    }, 'json');
 });
 
 // Close modal on background click

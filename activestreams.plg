@@ -76,12 +76,12 @@ A plugin to create a dashboard widget that shows your active streams from Plex, 
                     echo "WIDGET_ICON='streams'" >> "&plgPATH;/activestreams.cfg"
                     echo "WIDGET_TITLE='Active Streams'" >> "&plgPATH;/activestreams.cfg"
                 fi
-
+                
                 # Create empty servers config if missing
                 if [ ! -f "&plgPATH;/servers.json" ]; then
                     echo "[]" > "&plgPATH;/servers.json"
                 fi
-
+                
                 echo ""
                 echo "-----------------------------------------------------------"
                 echo " &name; has been installed."
