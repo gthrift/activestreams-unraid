@@ -334,7 +334,13 @@ if (!is_array($servers)) $servers = [];
                     <input type="checkbox" id="serverSSL"> _(Use HTTPS/SSL)_
                 </label>
             </div>
-            
+
+            <div class="as-checkbox-row">
+                <label>
+                    <input type="checkbox" id="serverAllowSelfSigned"> _(Allow self-signed certificates (less secure))_
+                </label>
+            </div>
+
             <div class="as-test-result" id="testResult"></div>
             
             <div class="as-modal-buttons">
@@ -416,6 +422,7 @@ function editServer(index) {
     $('#serverPort').val(server.port);
     $('#serverToken').val(server.token);
     $('#serverSSL').prop('checked', server.ssl === true || server.ssl === '1');
+    $('#serverAllowSelfSigned').prop('checked', server.allow_self_signed === true || server.allow_self_signed === '1');
     updateFormFields();
     $('#testResult').hide();
     $('#serverModal').fadeIn(200);
@@ -453,6 +460,7 @@ function testConnection() {
         port: $('#serverPort').val() || getDefaultPort($('#serverType').val()),
         token: $('#serverToken').val(),
         ssl: $('#serverSSL').is(':checked') ? '1' : '0',
+        allow_self_signed: $('#serverAllowSelfSigned').is(':checked') ? '1' : '0',
         csrf_token: csrfToken
     };
 
@@ -493,6 +501,7 @@ $('#serverForm').on('submit', function(e) {
         port: $('#serverPort').val() || getDefaultPort($('#serverType').val()),
         token: $('#serverToken').val(),
         ssl: $('#serverSSL').is(':checked') ? '1' : '0',
+        allow_self_signed: $('#serverAllowSelfSigned').is(':checked') ? '1' : '0',
         csrf_token: csrfToken
     };
 

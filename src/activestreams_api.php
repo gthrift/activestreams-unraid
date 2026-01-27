@@ -108,8 +108,23 @@ function buildCurlHandle($server) {
     curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
     curl_setopt($ch, CURLOPT_CONNECTTIMEOUT, 5);
     curl_setopt($ch, CURLOPT_TIMEOUT, 10);
-    curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
-    curl_setopt($ch, CURLOPT_SSL_VERIFYHOST, false);
+
+    // Enable SSL verification by default for security
+    $use_ssl = ($server['ssl'] === '1' || $server['ssl'] === true);
+    if ($use_ssl) {
+        $allow_self_signed = isset($server['allow_self_signed']) &&
+                            ($server['allow_self_signed'] === '1' || $server['allow_self_signed'] === true);
+
+        if ($allow_self_signed) {
+            // User explicitly allowed self-signed certificates
+            curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
+            curl_setopt($ch, CURLOPT_SSL_VERIFYHOST, 0);
+        } else {
+            // Verify SSL certificates (secure default)
+            curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, true);
+            curl_setopt($ch, CURLOPT_SSL_VERIFYHOST, 2);
+        }
+    }
 
     if (!empty($headers)) {
         curl_setopt($ch, CURLOPT_HTTPHEADER, $headers);

@@ -21,9 +21,8 @@ function getEncryptionKey() {
     // Generate new key
     $key = random_bytes(32);
 
-    // Save key with restricted permissions
+    // Save key
     file_put_contents($encryption_key_file, $key);
-    chmod($encryption_key_file, 0600);
 
     return $key;
 }

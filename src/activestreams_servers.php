@@ -106,9 +106,6 @@ function saveServers($servers) {
         return false;
     }
 
-    // Set secure permissions
-    chmod($servers_file, 0600);
-
     return $result;
 }
 
@@ -176,7 +173,7 @@ function validateServerData($data) {
 }
 
 // Test server connection
-function testConnection($type, $host, $port, $token, $ssl) {
+function testConnection($type, $host, $port, $token, $ssl, $allow_self_signed = false) {
     $protocol = $ssl ? 'https' : 'http';
     $url = '';
     $headers = [];
@@ -203,8 +200,19 @@ function testConnection($type, $host, $port, $token, $ssl) {
     curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
     curl_setopt($ch, CURLOPT_CONNECTTIMEOUT, 5);
     curl_setopt($ch, CURLOPT_TIMEOUT, 10);
-    curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
-    curl_setopt($ch, CURLOPT_SSL_VERIFYHOST, false);
+
+    // Enable SSL verification by default for security
+    if ($ssl) {
+        if ($allow_self_signed) {
+            // User explicitly allowed self-signed certificates
+            curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
+            curl_setopt($ch, CURLOPT_SSL_VERIFYHOST, 0);
+        } else {
+            // Verify SSL certificates (secure default)
+            curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, true);
+            curl_setopt($ch, CURLOPT_SSL_VERIFYHOST, 2);
+        }
+    }
 
     if (!empty($headers)) {
         curl_setopt($ch, CURLOPT_HTTPHEADER, $headers);
@@ -294,7 +302,8 @@ switch ($action) {
             'host' => trim($_POST['host'] ?? ''),
             'port' => (int)($_POST['port'] ?? 0),
             'token' => $_POST['token'] ?? '',
-            'ssl' => filter_var($_POST['ssl'] ?? false, FILTER_VALIDATE_BOOLEAN)
+            'ssl' => filter_var($_POST['ssl'] ?? false, FILTER_VALIDATE_BOOLEAN),
+            'allow_self_signed' => filter_var($_POST['allow_self_signed'] ?? false, FILTER_VALIDATE_BOOLEAN)
         ];
 
         // Validate input
@@ -329,7 +338,8 @@ switch ($action) {
             'host' => trim($_POST['host'] ?? ''),
             'port' => (int)($_POST['port'] ?? 0),
             'token' => $_POST['token'] ?? '',
-            'ssl' => filter_var($_POST['ssl'] ?? false, FILTER_VALIDATE_BOOLEAN)
+            'ssl' => filter_var($_POST['ssl'] ?? false, FILTER_VALIDATE_BOOLEAN),
+            'allow_self_signed' => filter_var($_POST['allow_self_signed'] ?? false, FILTER_VALIDATE_BOOLEAN)
         ];
 
         // Validate input
@@ -371,7 +381,8 @@ switch ($action) {
             $_POST['host'] ?? '',
             (int)($_POST['port'] ?? 0),
             $_POST['token'] ?? '',
-            filter_var($_POST['ssl'] ?? false, FILTER_VALIDATE_BOOLEAN)
+            filter_var($_POST['ssl'] ?? false, FILTER_VALIDATE_BOOLEAN),
+            filter_var($_POST['allow_self_signed'] ?? false, FILTER_VALIDATE_BOOLEAN)
         );
         echo json_encode($result);
         break;
