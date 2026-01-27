@@ -346,7 +346,7 @@ if (empty($allStreams)) {
                 <i class='fa fa-exclamation-circle'></i> " . implode(', ', $errors) . "
               </div>";
     } else {
-        echo "<div style='padding:15px; text-align:center; opacity:0.6; font-style:italic;'>_(No active streams)_</div>";
+        echo "<div style='padding:15px; text-align:center; opacity:0.6; font-style:italic;'>No active streams</div>";
     }
 } else {
     foreach ($allStreams as $s) {
