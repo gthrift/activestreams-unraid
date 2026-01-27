@@ -4,16 +4,17 @@
 <!ENTITY author    "gthrift">
 <!ENTITY version   "2026.01.08-TEST">
 <!ENTITY launch    "Settings/ActiveStreamsSettings">
+<!ENTITY gitURL    "https://raw.githubusercontent.com/gthrift/activestreams-unraid/main">
+<!ENTITY srcURL    "&gitURL;/src">
 <!ENTITY emhttp    "/usr/local/emhttp/plugins/&name;">
 <!ENTITY plgPATH   "/boot/config/plugins/&name;">
-<!ENTITY srcPATH   "/mnt/user/appdata/activestreams-unraid/src">
 ]>
 
 <PLUGIN name="&name;"
         author="&author;"
         version="&version;"
         launch="&launch;"
-        pluginURL="https://raw.githubusercontent.com/gthrift/activestreams-unraid/main/activestreams_test.plg"
+        pluginURL="&gitURL;/activestreams_test.plg"
         support="https://forums.unraid.net/topic/196336-plugin-active-streams-display-your-active-embyjellyfinplex-streams-on-your-dashboard/"
         IconFA="film"
         icon="streams.png"
@@ -21,7 +22,7 @@
 
 <CHANGES>
 ###2026.01.08-TEST
-- TEST VERSION: Installs directly from src/ directory
+- TEST VERSION: Downloads files directly from GitHub src/ directory
 - Security improvements: Token encryption, CSRF protection, SSL verification
 - DO NOT USE IN PRODUCTION
 
@@ -30,23 +31,22 @@
 </CHANGES>
 
 <OVERVIEW>
-TEST VERSION - Installs directly from src/ directory for development/testing.
+TEST VERSION - Downloads and installs files directly from GitHub src/ directory for development/testing.
 
 A plugin to create a dashboard widget that shows your active streams from Plex, Emby, and Jellyfin servers.
 
 TESTING SETUP:
-1. Clone the repo to your Unraid USB drive
-2. Update &srcPATH; entity above to point to your local src/ directory
-3. Install this test plugin
-4. Test your changes
-5. Uninstall test plugin before installing production version
+1. Push your changes to the main branch (or update gitURL entity for a different branch)
+2. Install this test plugin - it will download files from GitHub
+3. Test your changes
+4. Uninstall test plugin before installing production version
 </OVERVIEW>
 
 <FILE Run="/bin/bash">
         <INLINE>
                 echo "================================================"
                 echo " Installing TEST version of Active Streams"
-                echo " This installs from local src/ directory"
+                echo " Downloading files from GitHub src/ directory"
                 echo "================================================"
 
                 # Remove old webUI files to prevent conflicts
@@ -61,55 +61,26 @@ TESTING SETUP:
         </INLINE>
 </FILE>
 
-<FILE Run="/bin/bash">
-        <INLINE>
-                # Copy files from src/ directory
-                # UPDATE THIS PATH to point to your local repo's src/ directory
-                SRC_DIR="&srcPATH;"
+<!-- Download PHP files from GitHub -->
+<FILE Name="&emhttp;/activestreams_api.php">
+    <URL>&srcURL;/activestreams_api.php</URL>
+</FILE>
 
-                # Alternative: Specify absolute path here
-                # SRC_DIR="/mnt/user/development/activestreams-unraid/src"
+<FILE Name="&emhttp;/activestreams_servers.php">
+    <URL>&srcURL;/activestreams_servers.php</URL>
+</FILE>
 
-                if [ ! -d "$SRC_DIR" ]; then
-                    echo "ERROR: Source directory not found: $SRC_DIR"
-                    echo "Please update the srcPATH entity in this .plg file"
-                    echo "to point to your local activestreams-unraid/src directory"
-                    exit 1
-                fi
+<FILE Name="&emhttp;/activestreams_crypto.php">
+    <URL>&srcURL;/activestreams_crypto.php</URL>
+</FILE>
 
-                echo "Copying files from: $SRC_DIR"
+<!-- Download page files from GitHub -->
+<FILE Name="&emhttp;/ActiveStreamsDashboard.page">
+    <URL>&srcURL;/ActiveStreamsDashboard.page</URL>
+</FILE>
 
-                # Copy PHP files
-                if [ -f "$SRC_DIR/activestreams_api.php" ]; then
-                    cp "$SRC_DIR/activestreams_api.php" "&emhttp;/"
-                    echo "  ✓ activestreams_api.php"
-                fi
-
-                if [ -f "$SRC_DIR/activestreams_servers.php" ]; then
-                    cp "$SRC_DIR/activestreams_servers.php" "&emhttp;/"
-                    echo "  ✓ activestreams_servers.php"
-                fi
-
-                if [ -f "$SRC_DIR/activestreams_crypto.php" ]; then
-                    cp "$SRC_DIR/activestreams_crypto.php" "&emhttp;/"
-                    echo "  ✓ activestreams_crypto.php"
-                fi
-
-                # Copy page files
-                if [ -f "$SRC_DIR/ActiveStreamsDashboard.page" ]; then
-                    cp "$SRC_DIR/ActiveStreamsDashboard.page" "&emhttp;/"
-                    echo "  ✓ ActiveStreamsDashboard.page"
-                fi
-
-                if [ -f "$SRC_DIR/ActiveStreamsSettings.page" ]; then
-                    cp "$SRC_DIR/ActiveStreamsSettings.page" "&emhttp;/"
-                    echo "  ✓ ActiveStreamsSettings.page"
-                fi
-
-                echo ""
-                echo "Files installed to: &emhttp;"
-                ls -lh "&emhttp;/"
-        </INLINE>
+<FILE Name="&emhttp;/ActiveStreamsSettings.page">
+    <URL>&srcURL;/ActiveStreamsSettings.page</URL>
 </FILE>
 
 <FILE Run="/bin/bash">
@@ -129,11 +100,14 @@ TESTING SETUP:
                 fi
 
                 echo ""
+                echo "Files installed to: &emhttp;"
+                ls -lh "&emhttp;/"
+                echo ""
                 echo "-----------------------------------------------------------"
                 echo " TEST VERSION of &name; has been installed."
                 echo " Version: &version;"
                 echo ""
-                echo " Files installed from: &srcPATH;"
+                echo " Files downloaded from: &srcURL;"
                 echo " Config directory: &plgPATH;"
                 echo ""
                 echo " REMINDER: This is a TEST installation"
