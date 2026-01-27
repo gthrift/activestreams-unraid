@@ -80,7 +80,6 @@ Markdown="false"
         background: rgba(128,128,128,0.4);
     }
     
-    /* Modal Overlay */
     .as-modal { 
         display: none; 
         position: fixed; 
@@ -90,25 +89,26 @@ Markdown="false"
         height: 100%; 
         background: rgba(0,0,0,0.7); 
         z-index: 1000; 
+        overflow-y: auto; 
     }
-    
-    /* Modal Content - inherit background from body */
+
     .as-modal-content { 
-        position: absolute; 
-        top: 50%; 
-        left: 50%; 
-        transform: translate(-50%, -50%); 
+        position: relative; 
+        margin: 50px auto; 
+        top: auto;
+        left: auto;
+        transform: none;
         background: inherit;
         background-color: var(--background-color, #1c1b1b);
         padding: 25px; 
         border-radius: 10px; 
         min-width: 450px;
         max-width: 90%;
-        max-height: 90vh;
         border: 1px solid rgba(128,128,128,0.3);
         box-shadow: 0 10px 40px rgba(0,0,0,0.5);
         color: inherit;
     }
+
     .as-modal-content h3 { 
         margin-top: 0; 
         color: #ff9800;
