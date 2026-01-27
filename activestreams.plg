@@ -76,16 +76,27 @@ A plugin to create a dashboard widget that shows your active streams from Plex, 
                     echo "WIDGET_ICON='streams'" >> "&plgPATH;/activestreams.cfg"
                     echo "WIDGET_TITLE='Active Streams'" >> "&plgPATH;/activestreams.cfg"
                 fi
-                
+
                 # Create empty servers config if missing
                 if [ ! -f "&plgPATH;/servers.json" ]; then
                     echo "[]" > "&plgPATH;/servers.json"
                 fi
-                
+
+                # Set secure file permissions on sensitive files
+                chmod 700 "&plgPATH;"
+                chmod 600 "&plgPATH;/activestreams.cfg"
+                chmod 600 "&plgPATH;/servers.json"
+
+                # Set permissions on encryption key file if it exists
+                if [ -f "&plgPATH;/.encryption_key" ]; then
+                    chmod 600 "&plgPATH;/.encryption_key"
+                fi
+
                 echo ""
                 echo "-----------------------------------------------------------"
                 echo " &name; has been installed."
                 echo " Version: &version;"
+                echo " Security: File permissions have been secured"
                 echo "-----------------------------------------------------------"
                 echo ""
         </INLINE>

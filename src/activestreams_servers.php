@@ -2,13 +2,57 @@
 /**
  * Active Streams - Server Management API
  * Handles adding, editing, deleting, and testing media server connections
+ *
+ * Security Features:
+ * - CSRF token validation on all POST requests
+ * - Token encryption at rest
+ * - Secure session management
  */
+
+// Start session for CSRF token management
+if (session_status() === PHP_SESSION_NONE) {
+    session_start();
+}
 
 header('Content-Type: application/json');
 
 $servers_file = "/boot/config/plugins/activestreams/servers.json";
 
-// Load existing servers
+// Include shared encryption functions
+require_once __DIR__ . '/activestreams_crypto.php';
+
+// ============================================================================
+// CSRF Protection Functions
+// ============================================================================
+
+/**
+ * Generate CSRF token for session
+ */
+function getCsrfToken() {
+    if (empty($_SESSION['activestreams_csrf_token'])) {
+        $_SESSION['activestreams_csrf_token'] = bin2hex(random_bytes(32));
+    }
+    return $_SESSION['activestreams_csrf_token'];
+}
+
+/**
+ * Validate CSRF token from request
+ */
+function validateCsrfToken($token) {
+    if (empty($_SESSION['activestreams_csrf_token'])) {
+        return false;
+    }
+    return hash_equals($_SESSION['activestreams_csrf_token'], $token);
+}
+
+// ============================================================================
+// Server Management Functions
+// ============================================================================
+// Note: Encryption functions are in activestreams_crypto.php
+
+/**
+ * Load existing servers and decrypt tokens
+ */
 function loadServers() {
     global $servers_file;
     if (!file_exists($servers_file)) {
@@ -22,26 +66,56 @@ function loadServers() {
         return [];
     }
 
-    return is_array($data) ? $data : [];
+    if (!is_array($data)) {
+        return [];
+    }
+
+    // Decrypt tokens
+    foreach ($data as &$server) {
+        if (isset($server['token'])) {
+            $server['token'] = decryptToken($server['token']);
+        }
+    }
+
+    return $data;
 }
 
-// Save servers
+/**
+ * Save servers with encrypted tokens
+ */
 function saveServers($servers) {
     global $servers_file;
-    $result = file_put_contents($servers_file, json_encode($servers, JSON_PRETTY_PRINT));
+
+    // Create backup before save
+    if (file_exists($servers_file)) {
+        copy($servers_file, $servers_file . '.backup');
+    }
+
+    // Encrypt tokens before saving
+    $serversToSave = $servers;
+    foreach ($serversToSave as &$server) {
+        if (isset($server['token'])) {
+            $server['token'] = encryptToken($server['token']);
+        }
+    }
+
+    $result = file_put_contents($servers_file, json_encode($serversToSave, JSON_PRETTY_PRINT));
 
     if ($result === false) {
         error_log("Active Streams: Failed to write servers.json - check file permissions");
         return false;
     }
 
+    // Set secure permissions
+    chmod($servers_file, 0600);
+
     return $result;
 }
 
 // Validate host (IP or hostname)
 function validateHost($host) {
-    // Allow IP addresses
-    if (filter_var($host, FILTER_VALIDATE_IP)) {
+    // Allow IPv4 and IPv6 addresses
+    if (filter_var($host, FILTER_VALIDATE_IP, FILTER_FLAG_IPV4 | FILTER_FLAG_IPV6)) {
         return true;
     }
     // Allow valid domain names/hostnames
@@ -186,7 +260,30 @@ function testConnection($type, $host, $port, $token, $ssl) {
     ];
 }
 
-// Handle requests
+// ============================================================================
+// Request Handling with CSRF Protection
+// ============================================================================
+
+// Handle GET request for CSRF token
+if ($_SERVER['REQUEST_METHOD'] === 'GET' && isset($_GET['action']) && $_GET['action'] === 'get_token') {
+    echo json_encode(['csrf_token' => getCsrfToken()]);
+    exit;
+}
+
+// Validate CSRF token for all POST requests
+if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    $csrfToken = $_POST['csrf_token'] ?? '';
+
+    if (!validateCsrfToken($csrfToken)) {
+        http_response_code(403);
+        echo json_encode([
+            'success' => false,
+            'error' => 'Invalid security token. Please refresh the page and try again.'
+        ]);
+        exit;
+    }
+}
+
 $action = $_POST['action'] ?? '';
 
 switch ($action) {
@@ -195,9 +292,9 @@ switch ($action) {
             'type' => $_POST['type'] ?? 'plex',
             'name' => trim($_POST['name'] ?? ''),
             'host' => trim($_POST['host'] ?? ''),
-            'port' => $_POST['port'] ?? '',
+            'port' => (int)($_POST['port'] ?? 0),
             'token' => $_POST['token'] ?? '',
-            'ssl' => $_POST['ssl'] ?? '0'
+            'ssl' => filter_var($_POST['ssl'] ?? false, FILTER_VALIDATE_BOOLEAN)
         ];
 
         // Validate input
@@ -216,7 +313,7 @@ switch ($action) {
             echo json_encode(['success' => false, 'error' => 'Failed to save']);
         }
         break;
-        
+
     case 'edit':
         $index = (int)($_POST['index'] ?? -1);
         $servers = loadServers();
@@ -230,9 +327,9 @@ switch ($action) {
             'type' => $_POST['type'] ?? 'plex',
             'name' => trim($_POST['name'] ?? ''),
             'host' => trim($_POST['host'] ?? ''),
-            'port' => $_POST['port'] ?? '',
+            'port' => (int)($_POST['port'] ?? 0),
             'token' => $_POST['token'] ?? '',
-            'ssl' => $_POST['ssl'] ?? '0'
+            'ssl' => filter_var($_POST['ssl'] ?? false, FILTER_VALIDATE_BOOLEAN)
         ];
 
         // Validate input
@@ -250,14 +347,14 @@ switch ($action) {
             echo json_encode(['success' => false, 'error' => 'Failed to save']);
         }
         break;
-        
+
     case 'delete':
         $index = (int)($_POST['index'] ?? -1);
         $servers = loadServers();
-        
+
         if ($index >= 0 && $index < count($servers)) {
             array_splice($servers, $index, 1);
-            
+
             if (saveServers($servers)) {
                 echo json_encode(['success' => true]);
             } else {
@@ -267,18 +364,18 @@ switch ($action) {
             echo json_encode(['success' => false, 'error' => 'Invalid index']);
         }
         break;
-        
+
     case 'test':
         $result = testConnection(
             $_POST['type'] ?? 'plex',
             $_POST['host'] ?? '',
-            $_POST['port'] ?? '',
+            (int)($_POST['port'] ?? 0),
             $_POST['token'] ?? '',
-            ($_POST['ssl'] ?? '0') === '1'
+            filter_var($_POST['ssl'] ?? false, FILTER_VALIDATE_BOOLEAN)
         );
         echo json_encode($result);
         break;
-        
+
     default:
         echo json_encode(['success' => false, 'error' => 'Invalid action']);
 }

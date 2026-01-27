@@ -354,6 +354,7 @@ if (!is_array($servers)) $servers = [];
 
 <script>
 var servers = <?php echo json_encode($servers); ?>;
+var csrfToken = ''; // Will be fetched on page load
 
 // Get computed background color from body and apply to modal
 $(function() {
@@ -361,7 +362,19 @@ $(function() {
     if (bgColor && bgColor !== 'rgba(0, 0, 0, 0)') {
         $('.as-modal-content').css('background-color', bgColor);
     }
+
+    // Fetch CSRF token on page load
+    fetchCsrfToken();
 });
+
+// Fetch CSRF token from server
+function fetchCsrfToken() {
+    $.get('/plugins/activestreams/activestreams_servers.php?action=get_token', function(response) {
+        if (response.csrf_token) {
+            csrfToken = response.csrf_token;
+        }
+    }, 'json');
+}
 
 function updateFormFields() {
     var type = $('#serverType').val();
@@ -416,14 +429,19 @@ function deleteServer(index) {
     if (confirm('_(Are you sure you want to delete this server?)_')) {
         $.post('/plugins/activestreams/activestreams_servers.php', {
             action: 'delete',
-            index: index
+            index: index,
+            csrf_token: csrfToken
         }, function(response) {
             if (response.success) {
                 location.reload();
             } else {
                 alert('_(Error deleting server)_: ' + response.error);
             }
-        }, 'json');
+        }, 'json').fail(function(xhr) {
+            if (xhr.status === 403) {
+                alert('_(Security token expired. Please refresh the page.)_');
+            }
+        });
     }
 }
 
@@ -434,11 +452,12 @@ function testConnection() {
         host: $('#serverHost').val(),
         port: $('#serverPort').val() || getDefaultPort($('#serverType').val()),
         token: $('#serverToken').val(),
-        ssl: $('#serverSSL').is(':checked') ? '1' : '0'
+        ssl: $('#serverSSL').is(':checked') ? '1' : '0',
+        csrf_token: csrfToken
     };
-    
+
     $('#testResult').removeClass('as-test-success as-test-error').html('<i class="fa fa-spinner fa-spin"></i> _(Testing...)_').show();
-    
+
     $.post('/plugins/activestreams/activestreams_servers.php', data, function(response) {
         if (response.success) {
             $('#testResult').removeClass('as-test-error').addClass('as-test-success')
@@ -447,9 +466,14 @@ function testConnection() {
             $('#testResult').removeClass('as-test-success').addClass('as-test-error')
                 .html('<i class="fa fa-times"></i> _(Connection failed)_: ' + response.error);
         }
-    }, 'json').fail(function() {
-        $('#testResult').removeClass('as-test-success').addClass('as-test-error')
-            .html('<i class="fa fa-times"></i> _(Request failed)_');
+    }, 'json').fail(function(xhr) {
+        if (xhr.status === 403) {
+            $('#testResult').removeClass('as-test-success').addClass('as-test-error')
+                .html('<i class="fa fa-times"></i> _(Security token expired. Please refresh the page.)_');
+        } else {
+            $('#testResult').removeClass('as-test-success').addClass('as-test-error')
+                .html('<i class="fa fa-times"></i> _(Request failed)_');
+        }
     });
 }
 
@@ -459,7 +483,7 @@ function getDefaultPort(type) {
 
 $('#serverForm').on('submit', function(e) {
     e.preventDefault();
-    
+
     var data = {
         action: $('#editIndex').val() === '-1' ? 'add' : 'edit',
         index: $('#editIndex').val(),
@@ -468,16 +492,21 @@ $('#serverForm').on('submit', function(e) {
         host: $('#serverHost').val(),
         port: $('#serverPort').val() || getDefaultPort($('#serverType').val()),
         token: $('#serverToken').val(),
-        ssl: $('#serverSSL').is(':checked') ? '1' : '0'
+        ssl: $('#serverSSL').is(':checked') ? '1' : '0',
+        csrf_token: csrfToken
     };
-    
+
     $.post('/plugins/activestreams/activestreams_servers.php', data, function(response) {
         if (response.success) {
             location.reload();
         } else {
             alert('_(Error saving server)_: ' + response.error);
         }
-    }, 'json');
+    }, 'json').fail(function(xhr) {
+        if (xhr.status === 403) {
+            alert('_(Security token expired. Please refresh the page.)_');
+        }
+    });
 });
 
 // Close modal on background click
