@@ -328,7 +328,11 @@ foreach ($handles as $index => $ch) {
     $result = processServerResponse($server, $response, $http_code, $curl_error);
 
     if (isset($result['error'])) {
-        $errors[] = "{$server['name']}: {$result['error']}";
+        // Only show errors for authentication/config issues, not connection failures
+        // HTTP 0 means server is unreachable - silently skip these
+        if ($http_code !== 0 && strpos($result['error'], 'Connection error') === false) {
+            $errors[] = "{$server['name']}: {$result['error']}";
+        }
     } elseif (isset($result['streams'])) {
         $allStreams = array_merge($allStreams, $result['streams']);
     }
