@@ -20,6 +20,9 @@ if (!file_exists($cfg_file)) {
 
 $cfg = parse_ini_file($cfg_file);
 
+// Get display settings
+$showEpisodeNumbers = isset($cfg['SHOW_EPISODE_NUMBERS']) ? ($cfg['SHOW_EPISODE_NUMBERS'] === '1') : false;
+
 // Load servers
 if (!file_exists($servers_file)) {
     echo "<div style='padding:15px; text-align:center; color:#eebb00;'>
@@ -133,6 +136,7 @@ function processServerResponse($server, $response, $http_code, $curl_error) {
  * Parse Plex response into streams array
  */
 function parsePlexResponse($server, $response) {
+    global $showEpisodeNumbers;
     $data = json_decode($response, true);
     $streams = [];
 
@@ -142,9 +146,15 @@ function parsePlexResponse($server, $response) {
 
             // Handle TV shows
             if (isset($session['grandparentTitle'])) {
-                $title = $session['grandparentTitle'] . ' - ' . $title;
-                if (isset($session['parentIndex']) && isset($session['index'])) {
-                    $title = $session['grandparentTitle'] . " - S{$session['parentIndex']}E{$session['index']}";
+                $showName = $session['grandparentTitle'];
+                $episodeName = $session['title'] ?? '';
+
+                if ($showEpisodeNumbers && isset($session['parentIndex']) && isset($session['index'])) {
+                    // Format: "Show Name - S01E05 - Episode Name"
+                    $title = "$showName - S{$session['parentIndex']}E{$session['index']} - $episodeName";
+                } else {
+                    // Format: "Show Name - Episode Name"
+                    $title = "$showName - $episodeName";
                 }
             }
 
@@ -211,6 +221,7 @@ function parsePlexResponse($server, $response) {
  * Parse Emby/Jellyfin response into streams array
  */
 function parseEmbyJellyfinResponse($server, $response) {
+    global $showEpisodeNumbers;
     $sessions = json_decode($response, true);
     $streams = [];
 
@@ -219,21 +230,24 @@ function parseEmbyJellyfinResponse($server, $response) {
             if (!isset($session['NowPlayingItem'])) continue;
 
             $item = $session['NowPlayingItem'];
-            $title = $item['Name'] ?? 'Unknown';
+            $episodeName = $item['Name'] ?? 'Unknown';
 
-            // Handle TV shows - include episode numbering for consistency with Plex
+            // Handle TV shows
             if (isset($item['SeriesName'])) {
                 $seriesTitle = $item['SeriesName'];
 
-                // Add season/episode numbering if available
-                if (isset($item['ParentIndexNumber']) && isset($item['IndexNumber'])) {
+                // Add season/episode numbering if enabled and available
+                if ($showEpisodeNumbers && isset($item['ParentIndexNumber']) && isset($item['IndexNumber'])) {
                     $season = str_pad($item['ParentIndexNumber'], 2, '0', STR_PAD_LEFT);
                     $episode = str_pad($item['IndexNumber'], 2, '0', STR_PAD_LEFT);
-                    $title = "$seriesTitle - S{$season}E{$episode}";
+                    // Format: "Show Name - S01E05 - Episode Name"
+                    $title = "$seriesTitle - S{$season}E{$episode} - $episodeName";
                 } else {
-                    // Fallback to episode title if numbering not available
-                    $title = "$seriesTitle - $title";
+                    // Format: "Show Name - Episode Name"
+                    $title = "$seriesTitle - $episodeName";
                 }
+            } else {
+                $title = $episodeName;
             }
 
             $user = $session['UserName'] ?? 'Unknown';

@@ -214,6 +214,7 @@ $cfg = file_exists($cfg_file) ? parse_ini_file($cfg_file) : [];
 $cfg['POLL_INTERVAL'] = $cfg['POLL_INTERVAL'] ?? "5";
 $cfg['WIDGET_ICON'] = $cfg['WIDGET_ICON'] ?? "streams";
 $cfg['WIDGET_TITLE'] = $cfg['WIDGET_TITLE'] ?? "Active Streams";
+$cfg['SHOW_EPISODE_NUMBERS'] = $cfg['SHOW_EPISODE_NUMBERS'] ?? "0";
 
 // Load servers
 $servers = file_exists($servers_file) ? json_decode(file_get_contents($servers_file), true) : [];
@@ -250,6 +251,15 @@ if (!is_array($servers)) $servers = [];
         <div class="as-form-row">
             <label>_(Refresh Interval)_:</label>
             <input type="number" name="POLL_INTERVAL" value="<?php echo($cfg['POLL_INTERVAL']); ?>" min="1" max="60" style="width: 80px;"> _(seconds)_
+        </div>
+
+        <div class="as-form-row">
+            <label style="display: flex; align-items: center; cursor: pointer; font-weight: normal;">
+                <input type="hidden" name="SHOW_EPISODE_NUMBERS" value="0">
+                <input type="checkbox" name="SHOW_EPISODE_NUMBERS" value="1" <?php echo($cfg['SHOW_EPISODE_NUMBERS'] === '1' ? 'checked' : ''); ?> style="margin-right: 8px;">
+                _(Show season/episode numbers)_ (e.g., S01E05)
+            </label>
+            <div class="hint" style="margin-left: 0; margin-top: 5px;">_(When enabled, displays "Show - S01E05 - Episode". When disabled, displays "Show - Episode".)_</div>
         </div>
 
         <input type="submit" value="_(Save Settings)_" class="as-btn as-btn-primary">
