@@ -23,6 +23,10 @@
         min="6.12.0">
 
 <CHANGES>
+###2026.01.09
+- Set streaming episode details to display "Show Name" - "Episode Name".
+- Added option to include "S##E##" in streaming episode details.
+
 ###2026.01.08
 - Fixed widget_title to remove extra characters (this will reset your widget positioning)
 - Fixed server settings window so it can be scrolled if the popup is taller than the page
