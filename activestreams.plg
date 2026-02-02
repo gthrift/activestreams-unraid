@@ -2,8 +2,8 @@
 <!DOCTYPE PLUGIN [
 <!ENTITY name      "activestreams">
 <!ENTITY author    "gthrift">
-<!ENTITY version   "2026.01.09">
-<!ENTITY sha256    "PLACEHOLDER_SHA256_HASH">
+<!ENTITY version   "2026.02.01-beta1">
+<!ENTITY sha256    "1a449552daff4aec654194883e3360449029f07176e6e410297430716ee0401d">
 <!ENTITY launch    "Settings/ActiveStreamsSettings">
 <!ENTITY gitURL    "https://raw.githubusercontent.com/gthrift/activestreams-unraid/main">
 <!ENTITY pluginURL "&gitURL;/activestreams.plg">
@@ -25,6 +25,12 @@
         min="6.12.0">
 
 <CHANGES>
+###2026.02.01-beta1
+- Switched from MD5 to SHA256 for package integrity verification 
+- Added CSRF protection 
+- API Set restrictive permissions (600) on servers.json to protect API tokens 
+- Added configurable SSL certificate verification per server
+
 ###2026.01.09
 - Set streaming episode details to display "Show Name" - "Episode Name".
 - Added option to include "S##E##" in streaming episode details.
