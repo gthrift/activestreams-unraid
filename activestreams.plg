@@ -2,8 +2,8 @@
 <!DOCTYPE PLUGIN [
 <!ENTITY name      "activestreams">
 <!ENTITY author    "gthrift">
-<!ENTITY version   "2026.02.01">
-<!ENTITY sha256    "5c524f4dc62ffa9af54addf70efc0b28c70f525e86f162a58cbb7dfce1667adb">
+<!ENTITY version   "2026.01.09">
+<!ENTITY md5       "19a07815c689081e3c2476789cb07d28">
 <!ENTITY launch    "Settings/ActiveStreamsSettings">
 <!ENTITY gitURL    "https://raw.githubusercontent.com/gthrift/activestreams-unraid/main">
 <!ENTITY pluginURL "&gitURL;/activestreams.plg">
@@ -23,12 +23,6 @@
         min="6.12.0">
 
 <CHANGES>
-###2026.02.01
--Switched from MD5 to SHA256 for package integrity verification 
--Added CSRF protection to server management API 
--Set restrictive permissions (600) on servers.json to protect API tokens 
--Added configurable SSL certificate verification per server
-
 ###2026.01.09
 - Set streaming episode details to display "Show Name" - "Episode Name".
 - Added option to include "S##E##" in streaming episode details.
@@ -80,7 +74,7 @@ A plugin to create a dashboard widget that shows your active streams from Plex, 
 
 <FILE Name="&plgPATH;/&name;-&version;.txz" Run="upgradepkg --install-new --reinstall">
     <URL>&archive;</URL>
-    <SHA256>&sha256;</SHA256>
+    <MD5>&md5;</MD5>
 </FILE>
 
 <FILE Run="/bin/bash">
