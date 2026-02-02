@@ -2,8 +2,8 @@
 <!DOCTYPE PLUGIN [
 <!ENTITY name      "activestreams">
 <!ENTITY author    "gthrift">
-<!ENTITY version   "2026.02.01-beta1">
-<!ENTITY sha256    "1a449552daff4aec654194883e3360449029f07176e6e410297430716ee0401d">
+<!ENTITY version   "2026.01.09">
+<!ENTITY md5       "19a07815c689081e3c2476789cb07d28">
 <!ENTITY launch    "Settings/ActiveStreamsSettings">
 <!ENTITY gitURL    "https://raw.githubusercontent.com/gthrift/activestreams-unraid/main">
 <!ENTITY pluginURL "&gitURL;/activestreams.plg">
@@ -12,25 +12,17 @@
 <!ENTITY plgPATH   "/boot/config/plugins/&name;">
 ]>
 
-<PLUGIN name="&name;"
-        author="&author;"
-        version="&version;"
-        launch="&launch;"
+<PLUGIN name="&name;" 
+        author="&author;" 
+        version="&version;" 
+        launch="&launch;" 
         pluginURL="&pluginURL;"
         support="https://forums.unraid.net/topic/196336-plugin-active-streams-display-your-active-embyjellyfinplex-streams-on-your-dashboard/"
-        project="https://github.com/gthrift/activestreams-unraid"
-        readme="https://github.com/gthrift/activestreams-unraid#readme"
         IconFA="film"
-        icon="streams.png"
+        icon="streams.png" 
         min="6.12.0">
 
 <CHANGES>
-###2026.02.01-beta1
-- Switched from MD5 to SHA256 for package integrity verification 
-- Added CSRF protection 
-- API Set restrictive permissions (600) on servers.json to protect API tokens 
-- Added configurable SSL certificate verification per server
-
 ###2026.01.09
 - Set streaming episode details to display "Show Name" - "Episode Name".
 - Added option to include "S##E##" in streaming episode details.
@@ -82,12 +74,7 @@ A plugin to create a dashboard widget that shows your active streams from Plex, 
 
 <FILE Name="&plgPATH;/&name;-&version;.txz" Run="upgradepkg --install-new --reinstall">
     <URL>&archive;</URL>
-    <SHA256>&sha256;</SHA256>
-</FILE>
-
-<!-- Cache the package locally for faster boot (avoids re-download) -->
-<FILE Name="&plgPATH;/&name;-&version;.txz">
-    <LOCAL>&plgPATH;/&name;-&version;.txz</LOCAL>
+    <MD5>&md5;</MD5>
 </FILE>
 
 <FILE Run="/bin/bash">
@@ -103,9 +90,6 @@ A plugin to create a dashboard widget that shows your active streams from Plex, 
                 if [ ! -f "&plgPATH;/servers.json" ]; then
                     echo "[]" > "&plgPATH;/servers.json"
                 fi
-
-                # Set restrictive permissions on files containing sensitive tokens
-                chmod 600 "&plgPATH;/servers.json"
                 
                 echo ""
                 echo "-----------------------------------------------------------"
