@@ -1,0 +1,168 @@
+name: Build Beta Release
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Beta version number (e.g., 2026.02.01-beta1)'
+        required: true
+      release_notes:
+        description: 'Release notes (use \n for new lines)'
+        required: false
+        default: '- Beta build for testing'
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Build txz package
+        id: build
+        run: |
+          VERSION="${{ github.event.inputs.version }}"
+          PLUGIN_NAME="activestreams"
+
+          echo "Building BETA ${PLUGIN_NAME} version ${VERSION}..."
+          echo "Building from branch: ${GITHUB_REF_NAME}"
+
+          # Create directories
+          mkdir -p archive
+          TEMP_DIR=$(mktemp -d)
+          PLUGIN_DIR="${TEMP_DIR}/usr/local/emhttp/plugins/${PLUGIN_NAME}"
+          mkdir -p "${PLUGIN_DIR}"
+
+          # --- COPY FILES ---
+          # Use -v to see what is happening in the logs
+          # We copy EVERYTHING in src/ to catch hidden .sh files or subfolders
+          cp -r -v src/* "${PLUGIN_DIR}/" 2>/dev/null || true
+          cp -v metadata/*.png "${PLUGIN_DIR}/" 2>/dev/null || true
+
+          # --- FIX PERMISSIONS (CRITICAL FOR UNRAID) ---
+          echo "Setting permissions..."
+          # Directories: 755 (rwxr-xr-x) - allows traversal
+          find "${TEMP_DIR}" -type d -exec chmod 755 {} \;
+          # Files: 644 (rw-r--r--) - allows WebGUI/PHP to read them
+          find "${TEMP_DIR}" -type f -exec chmod 644 {} \;
+
+          # --- CLEANUP ---
+          # Remove Mac metadata files if they exist (prevents garbage in plugin)
+          find "${TEMP_DIR}" -name "._*" -delete
+
+          # --- VERIFICATION ---
+          FILE_COUNT=$(find "${PLUGIN_DIR}" -type f | wc -l)
+          if [ "$FILE_COUNT" -eq 0 ]; then
+            echo "ERROR: No files were copied to ${PLUGIN_DIR}"
+            exit 1
+          fi
+
+          # --- CREATE ARCHIVE ---
+          ARCHIVE_NAME="${PLUGIN_NAME}-${VERSION}.txz"
+          echo "Creating archive: ${ARCHIVE_NAME}"
+
+          cd "${TEMP_DIR}"
+          # FORCE ROOT OWNERSHIP HERE
+          tar --owner=0 --group=0 -cJf "${GITHUB_WORKSPACE}/archive/${ARCHIVE_NAME}" .
+          cd "${GITHUB_WORKSPACE}"
+
+          # Generate SHA256 (preferred for security over MD5)
+          SHA256_HASH=$(sha256sum "archive/${ARCHIVE_NAME}" | awk '{print $1}')
+          echo "${SHA256_HASH}" > "archive/${PLUGIN_NAME}-${VERSION}.sha256"
+
+          # Output env vars
+          echo "ARCHIVE_NAME=${ARCHIVE_NAME}" >> $GITHUB_ENV
+          echo "SHA256_HASH=${SHA256_HASH}" >> $GITHUB_ENV
+          echo "VERSION=${VERSION}" >> $GITHUB_ENV
+
+          rm -rf "${TEMP_DIR}"
+
+          echo ""
+          echo "Beta archive created: archive/${ARCHIVE_NAME}"
+          echo "SHA256: ${SHA256_HASH}"
+
+      - name: Update test plg file with new beta version
+        run: |
+          VERSION="${{ github.event.inputs.version }}"
+          RELEASE_NOTES="${{ github.event.inputs.release_notes }}"
+
+          echo "Updating activestreams_test.plg..."
+          echo "  Version: ${VERSION}"
+          echo "  SHA256: ${SHA256_HASH}"
+
+          # Update version in plg file
+          sed -i 's/<!ENTITY version[[:space:]]*"[^"]*"/<!ENTITY version   "'"${VERSION}"'"/' activestreams_test.plg
+
+          # Update SHA256 in plg file
+          sed -i 's/<!ENTITY sha256[[:space:]]*"[^"]*"/<!ENTITY sha256    "'"${SHA256_HASH}"'"/' activestreams_test.plg
+
+          # Add release notes if provided
+          if [ -n "${RELEASE_NOTES}" ]; then
+            echo "  Adding release notes..."
+
+            # Convert \n to actual newlines
+            FORMATTED_NOTES=$(printf '%s' "${RELEASE_NOTES}" | sed 's/\\n/\n/g')
+
+            # Create the new changelog entry in a temp file to avoid sed escaping issues
+            TEMP_FILE=$(mktemp)
+            printf '###%s\n%s\n\n' "${VERSION}" "${FORMATTED_NOTES}" > "${TEMP_FILE}"
+
+            # Use awk to insert content after <CHANGES> tag (more robust than sed for this use case)
+            awk '
+            /<CHANGES>/ {
+                print
+                while ((getline line < "'"${TEMP_FILE}"'") > 0) {
+                    print line
+                }
+                close("'"${TEMP_FILE}"'")
+                next
+            }
+            {print}
+            ' activestreams_test.plg > activestreams_test.plg.tmp && mv activestreams_test.plg.tmp activestreams_test.plg
+
+            rm "${TEMP_FILE}"
+
+            echo "  Release notes added"
+          fi
+
+          echo ""
+          echo "Updated test plg file:"
+          grep -A 5 "<CHANGES>" activestreams_test.plg | head -10
+
+      - name: Commit and push changes
+        run: |
+          git config --local user.email "action@github.com"
+          git config --local user.name "GitHub Action"
+
+          git add archive/ activestreams_test.plg
+
+          # Commit (don't fail if no changes)
+          git diff --staged --quiet && echo "No changes to commit" || git commit -m "Build beta version ${{ github.event.inputs.version }}"
+
+          # Push changes back to the current branch
+          git push origin HEAD:${GITHUB_REF_NAME}
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Summary
+        run: |
+          echo ""
+          echo "==========================================="
+          echo " BETA BUILD COMPLETE"
+          echo "==========================================="
+          echo ""
+          echo " Version: ${VERSION}"
+          echo " Archive: archive/${ARCHIVE_NAME}"
+          echo " SHA256:  ${SHA256_HASH}"
+          echo " Branch:  ${GITHUB_REF_NAME}"
+          echo ""
+          echo " To install this beta on Unraid:"
+          echo " 1. Go to Plugins > Install Plugin"
+          echo " 2. Enter the following URL:"
+          echo ""
+          echo "    https://raw.githubusercontent.com/gthrift/activestreams-unraid/${GITHUB_REF_NAME}/activestreams_test.plg"
+          echo ""
+          echo "==========================================="
