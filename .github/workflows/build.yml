@@ -86,13 +86,13 @@ jobs:
           tar --owner=0 --group=0 -cJf "${GITHUB_WORKSPACE}/archive/${ARCHIVE_NAME}" .
           cd "${GITHUB_WORKSPACE}"
           
-          # Generate MD5
-          MD5_HASH=$(md5sum "archive/${ARCHIVE_NAME}" | awk '{print $1}')
-          echo "${MD5_HASH}" > "archive/${PLUGIN_NAME}-${VERSION}.md5"
-          
+          # Generate SHA256 (preferred for security over MD5)
+          SHA256_HASH=$(sha256sum "archive/${ARCHIVE_NAME}" | awk '{print $1}')
+          echo "${SHA256_HASH}" > "archive/${PLUGIN_NAME}-${VERSION}.sha256"
+
           # Output env vars
           echo "ARCHIVE_NAME=${ARCHIVE_NAME}" >> $GITHUB_ENV
-          echo "MD5_HASH=${MD5_HASH}" >> $GITHUB_ENV
+          echo "SHA256_HASH=${SHA256_HASH}" >> $GITHUB_ENV
           
           rm -rf "${TEMP_DIR}"
       
@@ -103,13 +103,13 @@ jobs:
           
           echo "Updating activestreams.plg..."
           echo "  Version: ${VERSION}"
-          echo "  MD5: ${MD5_HASH}"
-          
+          echo "  SHA256: ${SHA256_HASH}"
+
           # Update version in plg file
           sed -i 's/<!ENTITY version[[:space:]]*"[^"]*"/<!ENTITY version   "'"${VERSION}"'"/' activestreams.plg
-          
-          # Update MD5 in plg file
-          sed -i 's/<!ENTITY md5[[:space:]]*"[^"]*"/<!ENTITY md5       "'"${MD5_HASH}"'"/' activestreams.plg
+
+          # Update SHA256 in plg file
+          sed -i 's/<!ENTITY sha256[[:space:]]*"[^"]*"/<!ENTITY sha256    "'"${SHA256_HASH}"'"/' activestreams.plg
           
           # Add release notes if provided (for manual triggers only)
           if [ "${{ github.event_name }}" = "workflow_dispatch" ] && [ -n "${RELEASE_NOTES}" ]; then
@@ -165,11 +165,11 @@ jobs:
         with:
           files: |
             archive/${{ env.ARCHIVE_NAME }}
-            archive/activestreams-${{ steps.version.outputs.VERSION }}.md5
+            archive/activestreams-${{ steps.version.outputs.VERSION }}.sha256
           body: |
             ## Active Streams v${{ steps.version.outputs.VERSION }}
-            
-            **MD5:** `${{ env.MD5_HASH }}`
+
+            **SHA256:** `${{ env.SHA256_HASH }}`
             
             ### Installation
             ```
