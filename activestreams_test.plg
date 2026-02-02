@@ -3,7 +3,7 @@
 <!ENTITY name      "activestreams">
 <!ENTITY author    "gthrift">
 <!ENTITY version   "2026.02.02-beta1">
-<!ENTITY sha256    "c47a7a518840840c2221cc8fd1290abf9f3f9e822b6e6f8486f5bb07dd069a28">
+<!ENTITY sha256    "ed028c77de60d7fd27a7d31779ade3de1270064d512cf067eddf956536b0b4b2">
 <!ENTITY launch    "Settings/ActiveStreamsSettings">
 <!ENTITY gitURL    "https://raw.githubusercontent.com/gthrift/activestreams-unraid/main">
 <!ENTITY archive   "&gitURL;/archive/&name;-&version;.txz">
@@ -24,6 +24,9 @@
         min="6.12.0">
 
 <CHANGES>
+###2026.02.02-beta1
+- Fix widget width
+
 ###2026.02.02-beta1
 - Beta build for testing
 
