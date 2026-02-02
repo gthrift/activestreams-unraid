@@ -6,26 +6,24 @@ Icon="streams.png"
     $plugin = "activestreams";
     $cfg = parse_ini_file("/boot/config/plugins/activestreams/activestreams.cfg");
     $poll_interval = isset($cfg['POLL_INTERVAL']) ? (int)$cfg['POLL_INTERVAL'] * 1000 : 5000;
+    
+    // Get widget customization
     $widget_icon = $cfg['WIDGET_ICON'] ?? 'streams';
     $widget_title = $cfg['WIDGET_TITLE'] ?? 'Active Streams';
+    
+    // Map icon to file
     $icon_file = "/plugins/activestreams/{$widget_icon}.png";
 ?>
 
 <style>
     .as-icon-img { width: 32px; height: 32px; }
 
-    #activestreams_streams {
-        overflow: hidden;
-        max-width: 100%;
-    }
-
-    .as-row, .as-header-row {
-        display: flex;
-        align-items: center;
+    /* Base Row Styling */
+    .as-row, .as-header-row { 
+        display: flex; 
+        align-items: center; 
         width: 100%;
-        max-width: 100%;
         box-sizing: border-box;
-        overflow: hidden;
     }
     
     .as-row { 
@@ -35,32 +33,30 @@ Icon="streams.png"
     .as-row:last-child { border-bottom: none; }
     .as-transcode { font-size: 10px; opacity: 0.7; margin-right: 4px; }
 
+    /* --- DESKTOP LAYOUT --- */
     .as-server {
         width: 20px !important;
         flex-shrink: 0;
     }
     
-    .as-name {
+    .as-name { 
         width: 35% !important;
-        min-width: 0;
         white-space: nowrap;
         overflow: hidden;
         text-overflow: ellipsis;
         padding-right: 10px;
     }
 
-    .as-device {
-        width: 20% !important;
-        min-width: 0;
+    .as-device { 
+        width: 20% !important; 
         text-align: center !important;
         white-space: nowrap;
         overflow: hidden;
         text-overflow: ellipsis;
     }
 
-    .as-user {
-        width: 15% !important;
-        min-width: 0;
+    .as-user { 
+        width: 15% !important; 
         text-align: center !important;
         white-space: nowrap;
         overflow: hidden;
@@ -75,6 +71,7 @@ Icon="streams.png"
         white-space: nowrap;
     }
 
+    /* Header row styling */
     .as-header-row {
         opacity: 0.6;
         font-size: 11px;
@@ -155,6 +152,7 @@ $mytiles[$plugin]['column1'] = <<<EOT
 </tbody>
 EOT;
 
+// COMPATIBILITY BLOCK FOR UNRAID 7.2+
 $isResponsiveWebgui = version_compare(parse_ini_file('/etc/unraid-version')['version'] ?? "", '7.2', '>=');
 if ( ! $isResponsiveWebgui) {
     $mytiles[$plugin]["column1"] .= <<<EOT
