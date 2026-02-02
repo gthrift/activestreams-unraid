@@ -14,11 +14,18 @@ Icon="streams.png"
 <style>
     .as-icon-img { width: 32px; height: 32px; }
 
-    .as-row, .as-header-row { 
-        display: flex; 
-        align-items: center; 
+    #activestreams_streams {
+        overflow: hidden;
+        max-width: 100%;
+    }
+
+    .as-row, .as-header-row {
+        display: flex;
+        align-items: center;
         width: 100%;
+        max-width: 100%;
         box-sizing: border-box;
+        overflow: hidden;
     }
     
     .as-row { 
@@ -33,24 +40,27 @@ Icon="streams.png"
         flex-shrink: 0;
     }
     
-    .as-name { 
+    .as-name {
         width: 35% !important;
+        min-width: 0;
         white-space: nowrap;
         overflow: hidden;
         text-overflow: ellipsis;
         padding-right: 10px;
     }
 
-    .as-device { 
-        width: 20% !important; 
+    .as-device {
+        width: 20% !important;
+        min-width: 0;
         text-align: center !important;
         white-space: nowrap;
         overflow: hidden;
         text-overflow: ellipsis;
     }
 
-    .as-user { 
-        width: 15% !important; 
+    .as-user {
+        width: 15% !important;
+        min-width: 0;
         text-align: center !important;
         white-space: nowrap;
         overflow: hidden;
