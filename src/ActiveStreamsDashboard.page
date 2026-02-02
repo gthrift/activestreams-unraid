@@ -1,4 +1,5 @@
 Menu="Dashboard"
+Title="Active Streams"
 Icon="streams.png"
 ---
 <?php

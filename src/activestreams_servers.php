@@ -6,6 +6,53 @@
 
 header('Content-Type: application/json');
 
+// CSRF Protection: Validate request origin
+// Only allow requests from the same host (prevents cross-site request forgery)
+function validateRequestOrigin() {
+    // Check if this is a POST request
+    if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+        return false;
+    }
+
+    // Get the expected host from the server
+    $serverHost = $_SERVER['HTTP_HOST'] ?? '';
+
+    // Check Origin header first (more reliable)
+    if (isset($_SERVER['HTTP_ORIGIN'])) {
+        $origin = parse_url($_SERVER['HTTP_ORIGIN'], PHP_URL_HOST);
+        if ($origin && $origin === $serverHost) {
+            return true;
+        }
+        // Also allow if origin matches server IP
+        $serverAddr = $_SERVER['SERVER_ADDR'] ?? '';
+        if ($origin && $origin === $serverAddr) {
+            return true;
+        }
+    }
+
+    // Fall back to Referer header
+    if (isset($_SERVER['HTTP_REFERER'])) {
+        $referer = parse_url($_SERVER['HTTP_REFERER'], PHP_URL_HOST);
+        if ($referer && $referer === $serverHost) {
+            return true;
+        }
+        $serverAddr = $_SERVER['SERVER_ADDR'] ?? '';
+        if ($referer && $referer === $serverAddr) {
+            return true;
+        }
+    }
+
+    // If no Origin or Referer, reject the request (could be CSRF)
+    return false;
+}
+
+// Validate CSRF for all POST requests
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && !validateRequestOrigin()) {
+    http_response_code(403);
+    echo json_encode(['success' => false, 'error' => 'Invalid request origin']);
+    exit;
+}
+
 $servers_file = "/boot/config/plugins/activestreams/servers.json";
 
 // Load existing servers
@@ -102,7 +149,7 @@ function validateServerData($data) {
 }
 
 // Test server connection
-function testConnection($type, $host, $port, $token, $ssl) {
+function testConnection($type, $host, $port, $token, $ssl, $sslVerify = false) {
     $protocol = $ssl ? 'https' : 'http';
     $url = '';
     $headers = [];
@@ -129,8 +176,10 @@ function testConnection($type, $host, $port, $token, $ssl) {
     curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
     curl_setopt($ch, CURLOPT_CONNECTTIMEOUT, 5);
     curl_setopt($ch, CURLOPT_TIMEOUT, 10);
-    curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
-    curl_setopt($ch, CURLOPT_SSL_VERIFYHOST, false);
+
+    // SSL verification - configurable per server
+    curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, $sslVerify);
+    curl_setopt($ch, CURLOPT_SSL_VERIFYHOST, $sslVerify ? 2 : 0);
 
     if (!empty($headers)) {
         curl_setopt($ch, CURLOPT_HTTPHEADER, $headers);
@@ -197,7 +246,8 @@ switch ($action) {
             'host' => trim($_POST['host'] ?? ''),
             'port' => $_POST['port'] ?? '',
             'token' => $_POST['token'] ?? '',
-            'ssl' => $_POST['ssl'] ?? '0'
+            'ssl' => $_POST['ssl'] ?? '0',
+            'ssl_verify' => $_POST['ssl_verify'] ?? '0'
         ];
 
         // Validate input
@@ -232,7 +282,8 @@ switch ($action) {
             'host' => trim($_POST['host'] ?? ''),
             'port' => $_POST['port'] ?? '',
             'token' => $_POST['token'] ?? '',
-            'ssl' => $_POST['ssl'] ?? '0'
+            'ssl' => $_POST['ssl'] ?? '0',
+            'ssl_verify' => $_POST['ssl_verify'] ?? '0'
         ];
 
         // Validate input
@@ -274,7 +325,8 @@ switch ($action) {
             $_POST['host'] ?? '',
             $_POST['port'] ?? '',
             $_POST['token'] ?? '',
-            ($_POST['ssl'] ?? '0') === '1'
+            ($_POST['ssl'] ?? '0') === '1',
+            ($_POST['ssl_verify'] ?? '0') === '1'
         );
         echo json_encode($result);
         break;

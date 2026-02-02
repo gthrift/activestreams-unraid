@@ -343,6 +343,13 @@ if (!is_array($servers)) $servers = [];
                     <input type="checkbox" id="serverSSL"> _(Use HTTPS/SSL)_
                 </label>
             </div>
+
+            <div class="as-checkbox-row" id="sslVerifyRow" style="display: none; margin-left: 20px;">
+                <label>
+                    <input type="checkbox" id="serverSSLVerify"> _(Verify SSL Certificate)_
+                </label>
+                <div class="hint" style="margin-left: 0; margin-top: 5px;">_(Enable for servers with valid SSL certificates. Disable for self-signed certificates.)_</div>
+            </div>
             
             <div class="as-test-result" id="testResult"></div>
             
@@ -392,6 +399,16 @@ function updateFormFields() {
     $('#tokenLabel').text(type === 'plex' ? '_(Plex Token)_:' : '_(API Key)_:');
 }
 
+// Toggle SSL verify checkbox visibility
+$('#serverSSL').on('change', function() {
+    if ($(this).is(':checked')) {
+        $('#sslVerifyRow').show();
+    } else {
+        $('#sslVerifyRow').hide();
+        $('#serverSSLVerify').prop('checked', false);
+    }
+});
+
 function openAddModal() {
     $('#editIndex').val(-1);
     $('#modalTitle').html('<i class="fa fa-server"></i> _(Add Server)_');
@@ -399,6 +416,7 @@ function openAddModal() {
     $('#serverType').val('plex');
     updateFormFields();
     $('#testResult').hide();
+    $('#sslVerifyRow').hide();
     $('#serverModal').fadeIn(200);
 }
 
@@ -412,6 +430,13 @@ function editServer(index) {
     $('#serverPort').val(server.port);
     $('#serverToken').val(server.token);
     $('#serverSSL').prop('checked', server.ssl === true || server.ssl === '1');
+    $('#serverSSLVerify').prop('checked', server.ssl_verify === true || server.ssl_verify === '1');
+    // Show SSL verify option if SSL is enabled
+    if (server.ssl === true || server.ssl === '1') {
+        $('#sslVerifyRow').show();
+    } else {
+        $('#sslVerifyRow').hide();
+    }
     updateFormFields();
     $('#testResult').hide();
     $('#serverModal').fadeIn(200);
@@ -443,7 +468,8 @@ function testConnection() {
         host: $('#serverHost').val(),
         port: $('#serverPort').val() || getDefaultPort($('#serverType').val()),
         token: $('#serverToken').val(),
-        ssl: $('#serverSSL').is(':checked') ? '1' : '0'
+        ssl: $('#serverSSL').is(':checked') ? '1' : '0',
+        ssl_verify: $('#serverSSLVerify').is(':checked') ? '1' : '0'
     };
     
     $('#testResult').removeClass('as-test-success as-test-error').html('<i class="fa fa-spinner fa-spin"></i> _(Testing...)_').show();
@@ -468,7 +494,7 @@ function getDefaultPort(type) {
 
 $('#serverForm').on('submit', function(e) {
     e.preventDefault();
-    
+
     var data = {
         action: $('#editIndex').val() === '-1' ? 'add' : 'edit',
         index: $('#editIndex').val(),
@@ -477,7 +503,8 @@ $('#serverForm').on('submit', function(e) {
         host: $('#serverHost').val(),
         port: $('#serverPort').val() || getDefaultPort($('#serverType').val()),
         token: $('#serverToken').val(),
-        ssl: $('#serverSSL').is(':checked') ? '1' : '0'
+        ssl: $('#serverSSL').is(':checked') ? '1' : '0',
+        ssl_verify: $('#serverSSLVerify').is(':checked') ? '1' : '0'
     };
     
     $.post('/plugins/activestreams/activestreams_servers.php', data, function(response) {
