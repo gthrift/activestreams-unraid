@@ -6,8 +6,6 @@ Icon="streams.png"
     $plugin = "activestreams";
     $cfg = parse_ini_file("/boot/config/plugins/activestreams/activestreams.cfg");
     $poll_interval = isset($cfg['POLL_INTERVAL']) ? (int)$cfg['POLL_INTERVAL'] * 1000 : 5000;
-    
-    // Widget Customizations
     $widget_icon = $cfg['WIDGET_ICON'] ?? 'streams';
     $widget_title = $cfg['WIDGET_TITLE'] ?? 'Active Streams';
     $icon_file = "/plugins/activestreams/{$widget_icon}.png";
@@ -30,7 +28,6 @@ Icon="streams.png"
     .as-row:last-child { border-bottom: none; }
     .as-transcode { font-size: 10px; opacity: 0.7; margin-right: 4px; }
 
-    /* --- DESKTOP LAYOUT --- */
     .as-server {
         width: 20px !important;
         flex-shrink: 0;
@@ -169,8 +166,10 @@ EOT;
     function updateActiveStreamsDashboard() {
         $.get("/plugins/activestreams/activestreams_api.php", function(data) {
             if (data) {
+                // 1. Update list
                 $("#activestreams_streams").html(data);
-
+                
+                // 2. Update count
                 var count = $("#activestreams_streams .as-row").length;
                 if(data.indexOf("No active streams") !== -1 || 
                    data.indexOf("No servers configured") !== -1 ||
