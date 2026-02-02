@@ -6,31 +6,26 @@
 
 header('Content-Type: application/json');
 
-// CSRF Protection: Validate request origin
-// Only allow requests from the same host (prevents cross-site request forgery)
 function validateRequestOrigin() {
-    // Check if this is a POST request
+
     if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
         return false;
     }
 
-    // Get the expected host from the server
     $serverHost = $_SERVER['HTTP_HOST'] ?? '';
 
-    // Check Origin header first (more reliable)
     if (isset($_SERVER['HTTP_ORIGIN'])) {
         $origin = parse_url($_SERVER['HTTP_ORIGIN'], PHP_URL_HOST);
         if ($origin && $origin === $serverHost) {
             return true;
         }
-        // Also allow if origin matches server IP
+
         $serverAddr = $_SERVER['SERVER_ADDR'] ?? '';
         if ($origin && $origin === $serverAddr) {
             return true;
         }
     }
 
-    // Fall back to Referer header
     if (isset($_SERVER['HTTP_REFERER'])) {
         $referer = parse_url($_SERVER['HTTP_REFERER'], PHP_URL_HOST);
         if ($referer && $referer === $serverHost) {
@@ -42,11 +37,9 @@ function validateRequestOrigin() {
         }
     }
 
-    // If no Origin or Referer, reject the request (could be CSRF)
     return false;
 }
 
-// Validate CSRF for all POST requests
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && !validateRequestOrigin()) {
     http_response_code(403);
     echo json_encode(['success' => false, 'error' => 'Invalid request origin']);
@@ -55,7 +48,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !validateRequestOrigin()) {
 
 $servers_file = "/boot/config/plugins/activestreams/servers.json";
 
-// Load existing servers
 function loadServers() {
     global $servers_file;
     if (!file_exists($servers_file)) {
@@ -63,7 +55,6 @@ function loadServers() {
     }
     $data = json_decode(file_get_contents($servers_file), true);
 
-    // Check for JSON decode errors
     if (json_last_error() !== JSON_ERROR_NONE) {
         error_log("Active Streams: JSON decode error in loadServers() - " . json_last_error_msg());
         return [];
@@ -72,7 +63,6 @@ function loadServers() {
     return is_array($data) ? $data : [];
 }
 
-// Save servers
 function saveServers($servers) {
     global $servers_file;
     $result = file_put_contents($servers_file, json_encode($servers, JSON_PRETTY_PRINT));
@@ -85,62 +75,53 @@ function saveServers($servers) {
     return $result;
 }
 
-// Validate host (IP or hostname)
 function validateHost($host) {
-    // Allow IP addresses
+
     if (filter_var($host, FILTER_VALIDATE_IP)) {
         return true;
     }
-    // Allow valid domain names/hostnames
+
     if (filter_var($host, FILTER_VALIDATE_DOMAIN, FILTER_FLAG_HOSTNAME)) {
         return true;
     }
-    // Allow localhost
+
     if ($host === 'localhost') {
         return true;
     }
     return false;
 }
 
-// Validate port number
 function validatePort($port) {
     return is_numeric($port) && $port >= 1 && $port <= 65535;
 }
 
-// Validate server type
 function validateServerType($type) {
     return in_array($type, ['plex', 'emby', 'jellyfin'], true);
 }
 
-// Sanitize and validate server data
 function validateServerData($data) {
     $errors = [];
 
-    // Validate server type
     if (!isset($data['type']) || !validateServerType($data['type'])) {
         $errors[] = 'Invalid server type';
     }
 
-    // Validate name
     if (!isset($data['name']) || trim($data['name']) === '') {
         $errors[] = 'Server name is required';
     } elseif (strlen($data['name']) > 100) {
         $errors[] = 'Server name too long (max 100 characters)';
     }
 
-    // Validate host
     if (!isset($data['host']) || trim($data['host']) === '') {
         $errors[] = 'Host is required';
     } elseif (!validateHost($data['host'])) {
         $errors[] = 'Invalid host IP/hostname';
     }
 
-    // Validate port
     if (!isset($data['port']) || !validatePort($data['port'])) {
         $errors[] = 'Invalid port number (must be 1-65535)';
     }
 
-    // Validate token
     if (!isset($data['token']) || trim($data['token']) === '') {
         $errors[] = 'API token/key is required';
     }
@@ -148,7 +129,6 @@ function validateServerData($data) {
     return $errors;
 }
 
-// Test server connection
 function testConnection($type, $host, $port, $token, $ssl, $sslVerify = false) {
     $protocol = $ssl ? 'https' : 'http';
     $url = '';
@@ -176,8 +156,6 @@ function testConnection($type, $host, $port, $token, $ssl, $sslVerify = false) {
     curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
     curl_setopt($ch, CURLOPT_CONNECTTIMEOUT, 5);
     curl_setopt($ch, CURLOPT_TIMEOUT, 10);
-
-    // SSL verification - configurable per server
     curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, $sslVerify);
     curl_setopt($ch, CURLOPT_SSL_VERIFYHOST, $sslVerify ? 2 : 0);
 
@@ -191,7 +169,6 @@ function testConnection($type, $host, $port, $token, $ssl, $sslVerify = false) {
     $curl_errno = curl_errno($ch);
     curl_close($ch);
 
-    // Check for curl errors first
     if ($curl_errno !== 0) {
         $debugInfo = "Failed to connect to $protocol://$host:$port";
         if ($curl_error) {
@@ -235,7 +212,6 @@ function testConnection($type, $host, $port, $token, $ssl, $sslVerify = false) {
     ];
 }
 
-// Handle requests
 $action = $_POST['action'] ?? '';
 
 switch ($action) {
@@ -250,7 +226,6 @@ switch ($action) {
             'ssl_verify' => $_POST['ssl_verify'] ?? '0'
         ];
 
-        // Validate input
         $validationErrors = validateServerData($serverData);
         if (!empty($validationErrors)) {
             echo json_encode(['success' => false, 'error' => implode(', ', $validationErrors)]);
@@ -286,7 +261,6 @@ switch ($action) {
             'ssl_verify' => $_POST['ssl_verify'] ?? '0'
         ];
 
-        // Validate input
         $validationErrors = validateServerData($serverData);
         if (!empty($validationErrors)) {
             echo json_encode(['success' => false, 'error' => implode(', ', $validationErrors)]);
