@@ -2,81 +2,85 @@
 <!DOCTYPE PLUGIN [
 <!ENTITY name      "activestreams">
 <!ENTITY author    "gthrift">
-<!ENTITY version   "2026.01.08.04-TEST">
+<!ENTITY version   "2026.02.01-beta1">
+<!ENTITY sha256    "1a449552daff4aec654194883e3360449029f07176e6e410297430716ee0401d">
 <!ENTITY launch    "Settings/ActiveStreamsSettings">
 <!ENTITY gitURL    "https://raw.githubusercontent.com/gthrift/activestreams-unraid/main">
-<!ENTITY srcURL    "&gitURL;/src">
+<!ENTITY pluginURL "&gitURL;/activestreams.plg">
+<!ENTITY archive   "&gitURL;/archive/&name;-&version;.txz">
 <!ENTITY emhttp    "/usr/local/emhttp/plugins/&name;">
 <!ENTITY plgPATH   "/boot/config/plugins/&name;">
 ]>
 
-<PLUGIN name="&name;"
-        author="&author;"
-        version="&version;"
-        launch="&launch;"
-        pluginURL="&gitURL;/activestreams_test.plg"
+<PLUGIN name="&name;" 
+        author="&author;" 
+        version="&version;" 
+        launch="&launch;" 
+        pluginURL="&pluginURL;"
         support="https://forums.unraid.net/topic/196336-plugin-active-streams-display-your-active-embyjellyfinplex-streams-on-your-dashboard/"
         IconFA="film"
-        icon="streams.png"
+        icon="streams.png" 
         min="6.12.0">
 
 <CHANGES>
-###2026.01.08-TEST
-- TEST VERSION: Downloads files directly from GitHub src/ directory
-- Security improvements: Token encryption, CSRF protection, SSL verification
-- DO NOT USE IN PRODUCTION
+###2026.02.01-beta1
+- Switched from MD5 to SHA256 for package integrity verification
+- Added CSRF protection to server management API
+- Set restrictive permissions (600) on servers.json to protect API tokens
+- Added configurable SSL certificate verification per server
+
+###2026.01.09
+- Set streaming episode details to display "Show Name" - "Episode Name".
+- Added option to include "S##E##" in streaming episode details.
+
+###2026.01.08
+- Fixed widget_title to remove extra characters (this will reset your widget positioning)
+- Fixed server settings window so it can be scrolled if the popup is taller than the page
+- Fixed settings page widget
 
 ###2026.01.07
 - Rename ActiveStreams.page to ActiveStreamsDashboard.page to resolve issue with Dynamix Active Streams
+
+###2026.01.06
+- Testing new build script
+
+###2026.01.05
+- Fix install script that breaks SMB
+
+###2026.01.04
+- Fix permissions issues
+
+###2026.01.03
+- Bug fixes and improvements
+ - Better logging and error handling
+ - Removed widget on/of toggle
+
+###2026.01.02
+- Bug fixes and improvements
+
+###2026.01.01
+- Initial Release
 </CHANGES>
 
 <OVERVIEW>
-TEST VERSION - Downloads and installs files directly from GitHub src/ directory for development/testing.
-
-A plugin to create a dashboard widget that shows your active streams from Plex, Emby, and Jellyfin servers.
-
-TESTING SETUP:
-1. Push your changes to the main branch (or update gitURL entity for a different branch)
-2. Install this test plugin - it will download files from GitHub
-3. Test your changes
-4. Uninstall test plugin before installing production version
+A plugin to create a dashboard widget that shows your active streams from Plex, Emby, and Jellyfin servers
 </OVERVIEW>
 
 <FILE Run="/bin/bash">
         <INLINE>
-                echo "================================================"
-                echo " Installing TEST version of Active Streams"
-                echo " Downloading files from GitHub src/ directory"
-                echo "================================================"
-
                 # Remove old webUI files to prevent conflicts
+                # This runs before the new package is installed
                 rm -f "&emhttp;/*.page"
                 rm -f "&emhttp;/*.php"
 
-                # Create plugin directory
-                mkdir -p "&emhttp;"
-
-                # Create Config Directory
+                # Create Config Directory before download attempts to write to it
                 mkdir -p "&plgPATH;"
         </INLINE>
 </FILE>
 
-<!-- Download PHP files from GitHub -->
-<FILE Name="&emhttp;/activestreams_api.php">
-    <URL>&srcURL;/activestreams_api.php</URL>
-</FILE>
-
-<FILE Name="&emhttp;/activestreams_servers.php">
-    <URL>&srcURL;/activestreams_servers.php</URL>
-</FILE>
-
-<!-- Download page files from GitHub -->
-<FILE Name="&emhttp;/ActiveStreamsDashboard.page">
-    <URL>&srcURL;/ActiveStreamsDashboard.page</URL>
-</FILE>
-
-<FILE Name="&emhttp;/ActiveStreamsSettings.page">
-    <URL>&srcURL;/ActiveStreamsSettings.page</URL>
+<FILE Name="&plgPATH;/&name;-&version;.txz" Run="upgradepkg --install-new --reinstall">
+    <URL>&archive;</URL>
+    <MD5>&md5;</MD5>
 </FILE>
 
 <FILE Run="/bin/bash">
@@ -86,28 +90,17 @@ TESTING SETUP:
                     echo "POLL_INTERVAL='5'" > "&plgPATH;/activestreams.cfg"
                     echo "WIDGET_ICON='streams'" >> "&plgPATH;/activestreams.cfg"
                     echo "WIDGET_TITLE='Active Streams'" >> "&plgPATH;/activestreams.cfg"
-                    echo "Created default config"
                 fi
-
+                
                 # Create empty servers config if missing
                 if [ ! -f "&plgPATH;/servers.json" ]; then
                     echo "[]" > "&plgPATH;/servers.json"
-                    echo "Created empty servers.json"
                 fi
-
-                echo ""
-                echo "Files installed to: &emhttp;"
-                ls -lh "&emhttp;/"
+                
                 echo ""
                 echo "-----------------------------------------------------------"
-                echo " TEST VERSION of &name; has been installed."
+                echo " &name; has been installed."
                 echo " Version: &version;"
-                echo ""
-                echo " Files downloaded from: &srcURL;"
-                echo " Config directory: &plgPATH;"
-                echo ""
-                echo " REMINDER: This is a TEST installation"
-                echo " Uninstall before using production version"
                 echo "-----------------------------------------------------------"
                 echo ""
         </INLINE>
@@ -115,14 +108,21 @@ TESTING SETUP:
 
 <FILE Run="/bin/bash" Method="remove">
         <INLINE>
-                echo "Uninstalling TEST version of &name;..."
+                echo "Uninstalling &name;..."
 
-                # Remove plugin files
-                rm -rf "&emhttp;"
-
+                # uninstall plugin
+                removepkg &plgPATH;/*.txz
+                
+                rm -rf &emhttp;
+                rm -rf &plgPATH;/*.txz \
+                       &plgPATH;/*.md5
+                
+                # Configuration files are preserved for future reinstallation
+                # To manually remove configs, delete: &plgPATH;/activestreams.cfg and &plgPATH;/servers.json
+                
                 echo ""
                 echo "-----------------------------------------------------------"
-                echo " TEST version of &name; has been uninstalled."
+                echo " &name; has been uninstalled."
                 echo " Your server configurations have been preserved at:"
                 echo " &plgPATH;/"
                 echo ""
