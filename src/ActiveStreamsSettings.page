@@ -12,7 +12,6 @@ IconFA="film"
 <?else:?>
 
 <style>
-    /* Section styling - uses transparent overlays to work with any theme */
     .as-section { 
         margin-bottom: 30px; 
         padding: 20px; 
@@ -45,7 +44,6 @@ IconFA="film"
     .as-server-item .server-host { opacity: 0.7; flex: 1; }
     .as-server-item .server-actions { display: flex; gap: 10px; }
     
-    /* Buttons - inherit from Unraid's button styling */
     .as-btn { 
         padding: 8px 16px; 
         cursor: pointer; 
@@ -77,7 +75,8 @@ IconFA="film"
     .as-btn-secondary:hover {
         background: rgba(128,128,128,0.4);
     }
-    
+
+    /* Server Config Pop-up */
     .as-modal { 
         display: none; 
         position: fixed; 
@@ -124,10 +123,6 @@ IconFA="film"
         font-size: 14px;
     }
     
-    /* 
-     * Input Fields - Let Unraid's default styles apply, just ensure sizing
-     * Unraid already styles input, select elements based on theme
-     */
     .as-modal-content input[type="text"],
     .as-modal-content input[type="number"],
     .as-modal-content input[type="password"],
@@ -151,7 +146,6 @@ IconFA="film"
         line-height: 1.4;
     }
     
-    /* Server Type Colors - these are brand colors, keep them */
     .type-plex { color: #e5a00d; }
     .type-emby { color: #52b54b; }
     .type-jellyfin { color: #00a4dc; }
@@ -371,7 +365,7 @@ if (!is_array($servers)) $servers = [];
 <script>
 var servers = <?php echo json_encode($servers); ?>;
 
-// Get computed background color from body and apply to modal
+// Apply configured bg color for modal
 $(function() {
     var bgColor = getComputedStyle(document.body).backgroundColor;
     if (bgColor && bgColor !== 'rgba(0, 0, 0, 0)') {
