@@ -51,6 +51,7 @@ Icon="streams.png"
 
     .as-device { 
         width: 20% !important; 
+        min-width: 0; 
         text-align: center !important;
         white-space: nowrap;
         overflow: hidden;
@@ -59,6 +60,7 @@ Icon="streams.png"
 
     .as-user { 
         width: 15% !important; 
+        min-width: 0;
         text-align: center !important;
         white-space: nowrap;
         overflow: hidden;
