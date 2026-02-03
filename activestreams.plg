@@ -23,6 +23,10 @@
         min="6.12.0">
 
 <CHANGES>
+###2026.02.03
+- Added scroll title on hover option. (enabled in settings)
+- Fixed CSS issues
+
 ###2026.02.02
 - Bug fixes and improvements
 
