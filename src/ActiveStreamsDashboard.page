@@ -344,18 +344,21 @@ EOT;
     }
 
     function updateActiveStreamsDashboard() {
-        if ($("#activestreams_streams").is(":hover")) {
+        if (asEnableTextScroll && $("#activestreams_streams").is(":hover")) {
             return;
         }
+
         $.get("/plugins/activestreams/activestreams_api.php", function(data) {
             if (data) {
                 $("#activestreams_streams").html(data);
+
                 var count = $("#activestreams_streams .as-row").length;
                 if(data.indexOf("No active streams") !== -1 ||
                    data.indexOf("No servers configured") !== -1 ||
                    data.indexOf("Connection failed") !== -1) {
                     count = 0;
                 }
+
                 $("#activestreams_count").text(count);
 
                 setupTextScrolling();
