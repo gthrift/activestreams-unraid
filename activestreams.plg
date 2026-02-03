@@ -23,6 +23,9 @@
         min="6.12.0">
 
 <CHANGES>
+##2026.02.02
+- Fixed widget width overflow when long media titles displayed
+
 ###2026.02.01
 - Switched from MD5 to SHA256 for package integrity verification
 - Added CSRF protection to server management API
