@@ -15,7 +15,45 @@ Icon="streams.png"
 ?>
 
 <style>
-    /* === CONTAINER CONSTRAINTS (Critical for width control) === */
+    /* === CSS CUSTOM PROPERTIES === */
+    :root {
+        /* Spacing */
+        --as-gap: 5px;
+        --as-padding-row: 6px;
+        --as-padding-header: 5px;
+        --as-padding-mobile: 10px;
+
+        /* Typography */
+        --as-font-size-header: 11px;
+        --as-font-size-time: 12px;
+        --as-font-size-transcode: 10px;
+
+        /* Colors - neutral defaults that work on most themes */
+        --as-border-subtle: rgba(128, 128, 128, 0.15);
+        --as-border-row: rgba(128, 128, 128, 0.1);
+        --as-opacity-muted: 0.6;
+        --as-opacity-transcode: 0.7;
+
+        /* Icon */
+        --as-icon-size: 32px;
+    }
+
+    /* Theme: Dark (black, dark) */
+    .Theme--black:root,
+    .Theme--dark:root {
+        --as-border-subtle: rgba(255, 255, 255, 0.1);
+        --as-border-row: rgba(255, 255, 255, 0.05);
+    }
+
+    /* Theme: Light (white, azure, gray) */
+    .Theme--white:root,
+    .Theme--azure:root,
+    .Theme--gray:root {
+        --as-border-subtle: rgba(0, 0, 0, 0.12);
+        --as-border-row: rgba(0, 0, 0, 0.06);
+    }
+
+    /* === CONTAINER CONSTRAINTS === */
     tbody[title="<?=$widget_title?>"] {
         table-layout: fixed;
         width: 100%;
@@ -33,43 +71,43 @@ Icon="streams.png"
     }
 
     /* === ICON === */
-    .as-icon-img { 
-        width: 32px; 
-        height: 32px; 
+    .as-icon-img {
+        width: var(--as-icon-size);
+        height: var(--as-icon-size);
     }
 
     /* === GRID LAYOUT === */
     #activestreams_streams .as-row,
     #activestreams_streams .as-header-row,
-    .as-header-row { 
-        display: grid; 
+    .as-header-row {
+        display: grid;
         grid-template-columns: 20px minmax(0, 3.5fr) minmax(0, 2fr) minmax(0, 1.5fr) minmax(0, 2.5fr);
-        align-items: center; 
+        align-items: center;
         width: 100%;
         max-width: 100%;
         min-width: 0;
         overflow: hidden;
         box-sizing: border-box;
-        gap: 5px;
-    }
-    
-    #activestreams_streams .as-row { 
-        border-bottom: 1px solid rgba(255,255,255,0.05); 
-        padding: 6px 0; 
+        gap: var(--as-gap);
     }
 
-    #activestreams_streams .as-row:last-child { 
-        border-bottom: none; 
+    #activestreams_streams .as-row {
+        border-bottom: 1px solid var(--as-border-row);
+        padding: var(--as-padding-row) 0;
+    }
+
+    #activestreams_streams .as-row:last-child {
+        border-bottom: none;
     }
 
     /* === TRANSCODE INDICATOR === */
-    #activestreams_streams .as-transcode { 
-        font-size: 10px; 
-        opacity: 0.7; 
-        margin-right: 4px; 
+    #activestreams_streams .as-transcode {
+        font-size: var(--as-font-size-transcode);
+        opacity: var(--as-opacity-transcode);
+        margin-right: 4px;
     }
 
-    /* === COLUMN BASE STYLES (Grid controls width, not these) === */
+    /* === COLUMN BASE STYLES === */
     #activestreams_streams .as-server,
     #activestreams_streams .as-name,
     #activestreams_streams .as-device,
@@ -81,9 +119,11 @@ Icon="streams.png"
     .as-header-row .as-user,
     .as-header-row .as-time {
         width: auto;
-        min-width: 0; /* Critical for ellipsis in grid */
+        min-width: 0;
         padding: 0;
         overflow: hidden;
+        white-space: nowrap;
+        text-overflow: ellipsis;
     }
 
     /* === INDIVIDUAL COLUMN STYLES === */
@@ -91,52 +131,45 @@ Icon="streams.png"
     .as-header-row .as-server {
         text-align: center;
     }
-    
+
     #activestreams_streams .as-name,
-    .as-header-row .as-name { 
-        white-space: nowrap;
-        overflow: hidden;
-        text-overflow: ellipsis;
-        padding-right: 5px;
+    .as-header-row .as-name {
+        padding-right: var(--as-gap);
     }
 
     #activestreams_streams .as-device,
-    .as-header-row .as-device { 
-        text-align: center;
-        white-space: nowrap;
-        overflow: hidden;
-        text-overflow: ellipsis;
-    }
-
+    .as-header-row .as-device,
     #activestreams_streams .as-user,
-    .as-header-row .as-user { 
+    .as-header-row .as-user {
         text-align: center;
-        white-space: nowrap;
-        overflow: hidden;
-        text-overflow: ellipsis;
     }
 
     #activestreams_streams .as-time,
-    .as-header-row .as-time { 
+    .as-header-row .as-time {
         text-align: center;
         font-family: monospace;
-        font-size: 12px;
-        white-space: nowrap;
-        overflow: hidden;
+        font-size: var(--as-font-size-time);
     }
 
     /* === HEADER ROW === */
     .as-header-row {
-        opacity: 0.6;
-        font-size: 11px;
+        opacity: var(--as-opacity-muted);
+        font-size: var(--as-font-size-header);
         text-transform: uppercase;
-        padding-bottom: 5px;
-        border-bottom: 1px solid rgba(255,255,255,0.1);
-        margin-bottom: 5px;
+        padding-bottom: var(--as-padding-header);
+        border-bottom: 1px solid var(--as-border-subtle);
+        margin-bottom: var(--as-padding-header);
     }
-    
-    .as-header-row .as-server { 
-        visibility: hidden; 
+
+    .as-header-row .as-server {
+        visibility: hidden;
+    }
+
+    /* === LOADING STATE === */
+    .as-loading-message {
+        font-style: italic;
+        text-align: center;
+        padding-top: var(--as-padding-mobile);
     }
 
     /* === MOBILE (Max Width 600px) === */
@@ -152,18 +185,18 @@ Icon="streams.png"
         #activestreams_streams .as-user,
         .as-header-row .as-server,
         .as-header-row .as-device,
-        .as-header-row .as-user { 
-            display: none; 
+        .as-header-row .as-user {
+            display: none;
         }
-        
+
         #activestreams_streams .as-name,
-        .as-header-row .as-name { 
-            padding-right: 10px;
+        .as-header-row .as-name {
+            padding-right: var(--as-padding-mobile);
         }
-        
+
         #activestreams_streams .as-time,
-        .as-header-row .as-time { 
-            padding-left: 10px;
+        .as-header-row .as-time {
+            padding-left: var(--as-padding-mobile);
         }
     }
 </style>
@@ -208,7 +241,7 @@ $mytiles[$plugin]['column1'] = <<<EOT
     <td>
         <div id="activestreams_streams">
             <div id="as_retrieving">
-                <p align="center" style="font-style:italic;text-align:center;padding-top:10px;">_(Retrieving Data...)_</p>
+                <p class="as-loading-message">_(Retrieving Data...)_</p>
             </div>
         </div>
     </td>
