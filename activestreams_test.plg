@@ -2,8 +2,8 @@
 <!DOCTYPE PLUGIN [
 <!ENTITY name      "activestreams">
 <!ENTITY author    "gthrift">
-<!ENTITY version   "2026.02.03-beta1">
-<!ENTITY sha256    "22ffcf7a57af6743ef4e87e637cbe5cec59d6e99f4f1d422ad7299aab915c34a">
+<!ENTITY version   "2026.02.03-beta3">
+<!ENTITY sha256    "fa08c9c1d030715db1c464c319e7d50253c4b6781c992a03c07969cb9f85c9bf">
 <!ENTITY launch    "Settings/ActiveStreamsSettings">
 <!ENTITY gitURL    "https://raw.githubusercontent.com/gthrift/activestreams-unraid/main">
 <!ENTITY archive   "&gitURL;/archive/&name;-&version;.txz">
