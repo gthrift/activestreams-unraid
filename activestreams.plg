@@ -3,7 +3,7 @@
 <!ENTITY name      "activestreams">
 <!ENTITY author    "gthrift">
 <!ENTITY version   "2026.02.02">
-<!ENTITY sha256    "b256f41c5ce0d0ae91dfa22c561a2c07baa281732e07cf36014058b11a161a1d">
+<!ENTITY sha256    "b044e5680c2187222bc14fd42fbc3419e5edd729604a614ae1822ce4228cb44d">
 <!ENTITY launch    "Settings/ActiveStreamsSettings">
 <!ENTITY gitURL    "https://raw.githubusercontent.com/gthrift/activestreams-unraid/main">
 <!ENTITY pluginURL "&gitURL;/activestreams.plg">
@@ -23,6 +23,9 @@
         min="6.12.0">
 
 <CHANGES>
+###2026.02.02
+- Bug fixes and improvements
+
 ##2026.02.02
 - Fixed widget width overflow when long media titles displayed
 
