@@ -9,7 +9,8 @@ Icon="streams.png"
     // Get widget customization
     $widget_icon = $cfg['WIDGET_ICON'] ?? 'streams';
     $widget_title = $cfg['WIDGET_TITLE'] ?? 'Active Streams';
-    
+    $enable_text_scroll = ($cfg['ENABLE_TEXT_SCROLL'] ?? '0') === '1';
+
     // Map icon to file
     $icon_file = "/plugins/activestreams/{$widget_icon}.png";
 ?>
@@ -162,10 +163,44 @@ Icon="streams.png"
         }
         
         #activestreams_streams .as-time,
-        .as-header-row .as-time { 
+        .as-header-row .as-time {
             padding-left: 10px;
         }
     }
+
+    <?php if ($enable_text_scroll): ?>
+    /* === TEXT SCROLLING ON HOVER === */
+    @keyframes as-text-scroll {
+        0%, 10% { transform: translateX(0); }
+        90%, 100% { transform: translateX(var(--scroll-distance, -50%)); }
+    }
+
+    #activestreams_streams .as-scrollable {
+        position: relative;
+    }
+
+    #activestreams_streams .as-scrollable .as-scroll-inner {
+        display: inline-block;
+        white-space: nowrap;
+    }
+
+    #activestreams_streams .as-scrollable:hover .as-scroll-inner.as-overflowing {
+        animation: as-text-scroll 4s linear infinite;
+        animation-delay: 0.3s;
+    }
+
+    /* Fade effect on edges for scrolling text */
+    #activestreams_streams .as-scrollable.as-has-overflow::after {
+        content: '';
+        position: absolute;
+        right: 0;
+        top: 0;
+        bottom: 0;
+        width: 20px;
+        background: linear-gradient(to right, transparent, var(--background-color, #1c1b1b));
+        pointer-events: none;
+    }
+    <?php endif; ?>
 </style>
 
 <?php
@@ -234,21 +269,60 @@ EOT;
 
 <script>
     var asPollInterval = <?=$poll_interval;?>;
-    
+    var asEnableTextScroll = <?=$enable_text_scroll ? 'true' : 'false';?>;
+
+    function setupTextScrolling() {
+        if (!asEnableTextScroll) return;
+
+        // Target columns that may overflow: name, device, user
+        $('#activestreams_streams .as-name, #activestreams_streams .as-device, #activestreams_streams .as-user').each(function() {
+            var $el = $(this);
+
+            // Skip if already processed or is header
+            if ($el.hasClass('as-scrollable') || $el.closest('.as-header-row').length) return;
+
+            var content = $el.html();
+            var title = $el.attr('title') || $el.text();
+
+            // Wrap content in inner span for scrolling
+            $el.addClass('as-scrollable');
+            $el.html('<span class="as-scroll-inner">' + content + '</span>');
+            $el.attr('title', title);
+
+            // Check if text overflows after DOM update
+            setTimeout(function() {
+                var $inner = $el.find('.as-scroll-inner');
+                var containerWidth = $el.width();
+                var textWidth = $inner[0].scrollWidth;
+
+                if (textWidth > containerWidth) {
+                    $el.addClass('as-has-overflow');
+                    $inner.addClass('as-overflowing');
+                    // Calculate scroll distance (negative to scroll left)
+                    var scrollDistance = -(textWidth - containerWidth + 20);
+                    $inner[0].style.setProperty('--scroll-distance', scrollDistance + 'px');
+                }
+            }, 10);
+        });
+    }
+
     function updateActiveStreamsDashboard() {
         $.get("/plugins/activestreams/activestreams_api.php", function(data) {
             if (data) {
                 // 1. Update list
                 $("#activestreams_streams").html(data);
-                
+
                 // 2. Update count
                 var count = $("#activestreams_streams .as-row").length;
-                if(data.indexOf("No active streams") !== -1 || 
+                if(data.indexOf("No active streams") !== -1 ||
                    data.indexOf("No servers configured") !== -1 ||
-                   data.indexOf("Connection failed") !== -1) { 
-                    count = 0; 
+                   data.indexOf("Connection failed") !== -1) {
+                    count = 0;
                 }
                 $("#activestreams_count").text(count);
+
+                // 3. Setup text scrolling if enabled
+                setupTextScrolling();
             }
         });
     }
