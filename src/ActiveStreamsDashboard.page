@@ -218,8 +218,8 @@ Icon="streams.png"
     }
 
     #activestreams_streams .as-scrollable:hover .as-scroll-inner.as-overflowing {
-        animation: as-text-scroll 4s linear infinite;
-        animation-delay: 0.3s;
+    animation: as-text-scroll var(--scroll-duration, 4s) linear infinite; 
+    animation-delay: 0.3s;
     }
 
     /* Fade effect on edges for scrolling text */
@@ -331,9 +331,13 @@ EOT;
                 if (textWidth > containerWidth) {
                     $el.addClass('as-has-overflow');
                     $inner.addClass('as-overflowing');
-                    // Calculate scroll distance (negative to scroll left)
-                    var scrollDistance = -(textWidth - containerWidth + 20);
+                    var overflowAmount = textWidth - containerWidth + 20;
+                    var scrollDistance = -overflowAmount;
                     $inner[0].style.setProperty('--scroll-distance', scrollDistance + 'px');
+                    var pixelsPerSecond = 50; 
+                    var movementTime = overflowAmount / pixelsPerSecond;
+                    var totalDuration = movementTime / 0.8;
+                    $inner[0].style.setProperty('--scroll-duration', totalDuration + 's');
                 }
             }, 10);
         });
