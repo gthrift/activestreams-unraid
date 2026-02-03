@@ -119,7 +119,7 @@ Icon="streams.png"
 
     #activestreams_streams .as-time,
     .as-header-row .as-time { 
-        text-align: right;
+        text-align: center;
         font-family: monospace;
         font-size: 12px;
         white-space: nowrap;
