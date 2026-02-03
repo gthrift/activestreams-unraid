@@ -344,12 +344,12 @@ EOT;
     }
 
     function updateActiveStreamsDashboard() {
+        if ($("#activestreams_streams").is(":hover")) {
+            return;
+        }
         $.get("/plugins/activestreams/activestreams_api.php", function(data) {
             if (data) {
-                // 1. Update list
                 $("#activestreams_streams").html(data);
-
-                // 2. Update count
                 var count = $("#activestreams_streams .as-row").length;
                 if(data.indexOf("No active streams") !== -1 ||
                    data.indexOf("No servers configured") !== -1 ||
@@ -358,7 +358,6 @@ EOT;
                 }
                 $("#activestreams_count").text(count);
 
-                // 3. Setup text scrolling if enabled
                 setupTextScrolling();
             }
         });
