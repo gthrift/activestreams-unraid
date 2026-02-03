@@ -24,6 +24,7 @@ Icon="streams.png"
         align-items: center; 
         width: 100%;
         box-sizing: border-box;
+        table-layout: fixed; 
     }
     
     .as-row { 
@@ -34,14 +35,14 @@ Icon="streams.png"
     .as-transcode { font-size: 10px; opacity: 0.7; margin-right: 4px; }
 
     /* --- DESKTOP LAYOUT --- */
+
     .as-server {
-        width: 20px !important;
-        flex-shrink: 0;
+        flex: 0 0 20px; 
+        text-align: center;
     }
     
     .as-name { 
-        width: 35% !important;
-        max-width: 35%; 
+        flex: 35 1 0; 
         min-width: 0; 
         white-space: nowrap;
         overflow: hidden;
@@ -50,8 +51,8 @@ Icon="streams.png"
     }
 
     .as-device { 
-        width: 20% !important; 
-        min-width: 0; 
+        flex: 20 1 0; 
+        min-width: 0;
         text-align: center !important;
         white-space: nowrap;
         overflow: hidden;
@@ -59,7 +60,7 @@ Icon="streams.png"
     }
 
     .as-user { 
-        width: 15% !important; 
+        flex: 15 1 0; 
         min-width: 0;
         text-align: center !important;
         white-space: nowrap;
@@ -68,11 +69,13 @@ Icon="streams.png"
     }
 
     .as-time { 
-        width: 25% !important; 
+        flex: 25 1 0; 
+        min-width: 0;
         text-align: right !important;
         font-family: monospace;
         font-size: 12px;
         white-space: nowrap;
+        overflow: hidden; 
     }
 
     /* Header row styling */
@@ -94,14 +97,14 @@ Icon="streams.png"
         }
         
         .as-name { 
-            width: auto !important;     
-            flex: 1 1 auto !important;  
+            flex: 1 1 auto !important;
+            width: auto !important;      
             min-width: 0;
         }
         
         .as-time { 
-            width: auto !important;    
-            flex: 0 0 auto !important;  
+            flex: 0 0 auto !important;
+            width: auto !important;     
             margin-left: auto;
             padding-left: 10px;
         }
