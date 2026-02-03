@@ -16,69 +16,117 @@ Icon="streams.png"
 ?>
 
 <style>
-    .as-icon-img { width: 32px; height: 32px; }
+    /* === CONTAINER CONSTRAINTS (Critical for width control) === */
+    tbody[title="<?=$widget_title?>"] {
+        table-layout: fixed;
+        width: 100%;
+    }
 
-    /* --- NUCLEAR OPTION: CSS GRID --- */
-    .as-row, .as-header-row { 
+    tbody[title="<?=$widget_title?>"] td {
+        max-width: 100%;
+        overflow: hidden;
+    }
+
+    #activestreams_streams {
+        max-width: 100%;
+        overflow: hidden;
+        box-sizing: border-box;
+    }
+
+    /* === ICON === */
+    .as-icon-img { 
+        width: 32px; 
+        height: 32px; 
+    }
+
+    /* === GRID LAYOUT === */
+    #activestreams_streams .as-row,
+    #activestreams_streams .as-header-row,
+    .as-header-row { 
         display: grid; 
-        /* 1. First col: 20px fixed
-           2. Middle cols: fractional (fr) units that add up to available space
-           3. minmax(0, ...) FORCES the column to shrink if text is long
-        */
         grid-template-columns: 20px minmax(0, 3.5fr) minmax(0, 2fr) minmax(0, 1.5fr) minmax(0, 2.5fr);
         align-items: center; 
         width: 100%;
+        max-width: 100%;
+        min-width: 0;
+        overflow: hidden;
         box-sizing: border-box;
-        gap: 5px; /* Adds breathing room between columns */
+        gap: 5px;
     }
     
-    .as-row { 
+    #activestreams_streams .as-row { 
         border-bottom: 1px solid rgba(255,255,255,0.05); 
         padding: 6px 0; 
     }
-    .as-row:last-child { border-bottom: none; }
-    .as-transcode { font-size: 10px; opacity: 0.7; margin-right: 4px; }
 
-    /* Reset all widths because Grid controls the layout now */
-    .as-server, .as-name, .as-device, .as-user, .as-time {
-        width: auto !important;
-        padding: 0;
+    #activestreams_streams .as-row:last-child { 
+        border-bottom: none; 
     }
 
-    .as-server {
+    /* === TRANSCODE INDICATOR === */
+    #activestreams_streams .as-transcode { 
+        font-size: 10px; 
+        opacity: 0.7; 
+        margin-right: 4px; 
+    }
+
+    /* === COLUMN BASE STYLES (Grid controls width, not these) === */
+    #activestreams_streams .as-server,
+    #activestreams_streams .as-name,
+    #activestreams_streams .as-device,
+    #activestreams_streams .as-user,
+    #activestreams_streams .as-time,
+    .as-header-row .as-server,
+    .as-header-row .as-name,
+    .as-header-row .as-device,
+    .as-header-row .as-user,
+    .as-header-row .as-time {
+        width: auto;
+        min-width: 0; /* Critical for ellipsis in grid */
+        padding: 0;
+        overflow: hidden;
+    }
+
+    /* === INDIVIDUAL COLUMN STYLES === */
+    #activestreams_streams .as-server,
+    .as-header-row .as-server {
         text-align: center;
     }
     
-    .as-name { 
+    #activestreams_streams .as-name,
+    .as-header-row .as-name { 
         white-space: nowrap;
         overflow: hidden;
         text-overflow: ellipsis;
         padding-right: 5px;
     }
 
-    .as-device { 
-        text-align: center !important;
+    #activestreams_streams .as-device,
+    .as-header-row .as-device { 
+        text-align: center;
         white-space: nowrap;
         overflow: hidden;
         text-overflow: ellipsis;
     }
 
-    .as-user { 
-        text-align: center !important;
+    #activestreams_streams .as-user,
+    .as-header-row .as-user { 
+        text-align: center;
         white-space: nowrap;
         overflow: hidden;
         text-overflow: ellipsis;
     }
 
-    .as-time { 
-        text-align: right !important;
+    #activestreams_streams .as-time,
+    .as-header-row .as-time { 
+        text-align: right;
         font-family: monospace;
         font-size: 12px;
         white-space: nowrap;
-        overflow: hidden; /* Just in case */
+        overflow: hidden;
     }
 
-    /* Header row styling */
+    /* === HEADER ROW === */
     .as-header-row {
         opacity: 0.6;
         font-size: 11px;
@@ -88,25 +136,34 @@ Icon="streams.png"
         margin-bottom: 5px;
     }
     
-    .as-header-row .as-server { visibility: hidden; }
+    .as-header-row .as-server { 
+        visibility: hidden; 
+    }
 
-    /* --- MOBILE OVERRIDES (Max Width 600px) --- */
+    /* === MOBILE (Max Width 600px) === */
     @media only screen and (max-width: 600px) {
-        .as-row, .as-header-row {
-            /* Switch grid to 2 columns: Name (flexible) + Time (auto) */
+        #activestreams_streams .as-row,
+        #activestreams_streams .as-header-row,
+        .as-header-row {
             grid-template-columns: minmax(0, 1fr) auto;
         }
 
-        /* Hide columns */
-        .as-server, .as-device, .as-user { 
-            display: none !important; 
+        #activestreams_streams .as-server,
+        #activestreams_streams .as-device,
+        #activestreams_streams .as-user,
+        .as-header-row .as-server,
+        .as-header-row .as-device,
+        .as-header-row .as-user { 
+            display: none; 
         }
         
-        .as-name { 
+        #activestreams_streams .as-name,
+        .as-header-row .as-name { 
             padding-right: 10px;
         }
         
-        .as-time { 
+        #activestreams_streams .as-time,
+        .as-header-row .as-time { 
             padding-left: 10px;
         }
     }
