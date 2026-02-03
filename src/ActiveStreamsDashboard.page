@@ -93,7 +93,7 @@ Icon="streams.png"
     }
 
     #activestreams_streams .as-row {
-        border-bottom: 1px solid var(--as-border-row);
+        border-bottom: none;
         padding: var(--as-padding-row) 0;
     }
 
@@ -158,7 +158,7 @@ Icon="streams.png"
         font-size: var(--as-font-size-header);
         text-transform: uppercase;
         padding-bottom: var(--as-padding-header);
-        border-bottom: 1px solid var(--as-border-subtle);
+        border-bottom: none;
         margin-bottom: var(--as-padding-header);
     }
 
