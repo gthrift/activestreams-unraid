@@ -2,7 +2,7 @@
 /**
  * Active Streams - Stream Fetching API
  * Fetches and aggregates active streams from all configured media servers
-**/
+*/
 
 error_reporting(E_ALL);
 ini_set('display_errors', '0');
