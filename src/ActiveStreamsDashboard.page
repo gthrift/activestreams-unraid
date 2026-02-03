@@ -222,17 +222,17 @@ Icon="streams.png"
     animation-delay: 0.3s;
     }
 
-    /* Fade effect on edges for scrolling text */
+    /* Fade effect on edges for scrolling text 
     #activestreams_streams .as-scrollable.as-has-overflow::after {
         content: '';
         position: absolute;
         right: 0;
         top: 0;
         bottom: 0;
-        width: 20px;
+        width: 10px;
         background: linear-gradient(to right, transparent, var(--background-color, #1c1b1b));
         pointer-events: none;
-    }
+    } */
     <?php endif; ?>
 </style>
 
