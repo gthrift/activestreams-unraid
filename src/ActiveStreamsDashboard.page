@@ -154,8 +154,8 @@ Icon="streams.png"
 
     /* === HEADER ROW === */
     .as-header-row {
-        opacity: var(--as-opacity-muted);
-        font-size: var(--as-font-size-header);
+        #opacity: var(--as-opacity-muted);
+        #font-size: var(--as-font-size-header);
         text-transform: uppercase;
         padding-bottom: var(--as-padding-header);
         border-bottom: none;
