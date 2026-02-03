@@ -18,13 +18,18 @@ Icon="streams.png"
 <style>
     .as-icon-img { width: 32px; height: 32px; }
 
-    /* Base Row Styling */
+    /* --- NUCLEAR OPTION: CSS GRID --- */
     .as-row, .as-header-row { 
-        display: flex; 
+        display: grid; 
+        /* 1. First col: 20px fixed
+           2. Middle cols: fractional (fr) units that add up to available space
+           3. minmax(0, ...) FORCES the column to shrink if text is long
+        */
+        grid-template-columns: 20px minmax(0, 3.5fr) minmax(0, 2fr) minmax(0, 1.5fr) minmax(0, 2.5fr);
         align-items: center; 
         width: 100%;
         box-sizing: border-box;
-        table-layout: fixed; 
+        gap: 5px; /* Adds breathing room between columns */
     }
     
     .as-row { 
@@ -34,25 +39,24 @@ Icon="streams.png"
     .as-row:last-child { border-bottom: none; }
     .as-transcode { font-size: 10px; opacity: 0.7; margin-right: 4px; }
 
-    /* --- DESKTOP LAYOUT --- */
+    /* Reset all widths because Grid controls the layout now */
+    .as-server, .as-name, .as-device, .as-user, .as-time {
+        width: auto !important;
+        padding: 0;
+    }
 
     .as-server {
-        flex: 0 0 20px; 
         text-align: center;
     }
     
     .as-name { 
-        flex: 35 1 0; 
-        min-width: 0; 
         white-space: nowrap;
         overflow: hidden;
         text-overflow: ellipsis;
-        padding-right: 10px;
+        padding-right: 5px;
     }
 
     .as-device { 
-        flex: 20 1 0; 
-        min-width: 0;
         text-align: center !important;
         white-space: nowrap;
         overflow: hidden;
@@ -60,8 +64,6 @@ Icon="streams.png"
     }
 
     .as-user { 
-        flex: 15 1 0; 
-        min-width: 0;
         text-align: center !important;
         white-space: nowrap;
         overflow: hidden;
@@ -69,13 +71,11 @@ Icon="streams.png"
     }
 
     .as-time { 
-        flex: 25 1 0; 
-        min-width: 0;
         text-align: right !important;
         font-family: monospace;
         font-size: 12px;
         white-space: nowrap;
-        overflow: hidden; 
+        overflow: hidden; /* Just in case */
     }
 
     /* Header row styling */
@@ -92,20 +92,21 @@ Icon="streams.png"
 
     /* --- MOBILE OVERRIDES (Max Width 600px) --- */
     @media only screen and (max-width: 600px) {
-        .as-device, .as-user { 
+        .as-row, .as-header-row {
+            /* Switch grid to 2 columns: Name (flexible) + Time (auto) */
+            grid-template-columns: minmax(0, 1fr) auto;
+        }
+
+        /* Hide columns */
+        .as-server, .as-device, .as-user { 
             display: none !important; 
         }
         
         .as-name { 
-            flex: 1 1 auto !important;
-            width: auto !important;      
-            min-width: 0;
+            padding-right: 10px;
         }
         
         .as-time { 
-            flex: 0 0 auto !important;
-            width: auto !important;     
-            margin-left: auto;
             padding-left: 10px;
         }
     }
