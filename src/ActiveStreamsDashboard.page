@@ -41,6 +41,8 @@ Icon="streams.png"
     
     .as-name { 
         width: 35% !important;
+        max-width: 35%; 
+        min-width: 0; 
         white-space: nowrap;
         overflow: hidden;
         text-overflow: ellipsis;
