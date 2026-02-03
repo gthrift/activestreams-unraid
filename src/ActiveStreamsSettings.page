@@ -263,7 +263,7 @@ if (!is_array($servers)) $servers = [];
                 <input type="checkbox" name="ENABLE_TEXT_SCROLL" value="1" <?php echo($cfg['ENABLE_TEXT_SCROLL'] === '1' ? 'checked' : ''); ?> style="margin-right: 8px;">
                 _(Enable text scrolling on hover)_
             </label>
-            <div class="hint" style="margin-left: 0; margin-top: 5px;">_(When enabled, long text will scroll on hover to reveal the full content instead of being truncated with ellipsis.)_</div>
+            <div class="hint" style="margin-left: 0; margin-top: 5px;">_(When enabled, long text will scroll on hover to reveal the full content instead of being truncated with ellipsis.  Refresh is paused while hovering.)_</div>
         </div>
 
         <input type="submit" value="_(Save Settings)_" class="as-btn as-btn-primary">
