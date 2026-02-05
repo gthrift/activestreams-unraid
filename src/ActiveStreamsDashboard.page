@@ -1,4 +1,5 @@
 Menu="Dashboard"
+Title="Active Streams"
 Icon="streams.png"
 ---
 <?php
@@ -9,155 +10,163 @@ Icon="streams.png"
     // Get widget customization
     $widget_icon = $cfg['WIDGET_ICON'] ?? 'streams';
     $widget_title = $cfg['WIDGET_TITLE'] ?? 'Active Streams';
-    $enable_text_scroll = ($cfg['ENABLE_TEXT_SCROLL'] ?? '0') === '1';
-
-    // Map icon to file
-    $icon_file = "/plugins/activestreams/{$widget_icon}.png";
-?>
-
-
-  Menu="Dashboard"
-Icon="streams.png"
----
-<?php
-    $plugin = "activestreams";
-    $cfg = parse_ini_file("/boot/config/plugins/activestreams/activestreams.cfg");
-    $poll_interval = isset($cfg['POLL_INTERVAL']) ? (int)$cfg['POLL_INTERVAL'] * 1000 : 5000;
     
-    // Get widget customization
-    $widget_icon = $cfg['WIDGET_ICON'] ?? 'streams';
-    $widget_title = $cfg['WIDGET_TITLE'] ?? 'Active Streams';
-    $enable_text_scroll = ($cfg['ENABLE_TEXT_SCROLL'] ?? '0') === '1';
-
     // Map icon to file
     $icon_file = "/plugins/activestreams/{$widget_icon}.png";
 ?>
 
 <style>
-   /* 1. DEFINE THE CONTAINER CONTEXT (Moved inside style tags) */
-   #activestreams_streams {
-       width: 100%;
-       container-type: inline-size;
-       container-name: as-widget;
-   }
+    /* === CONTAINER CONSTRAINTS (Critical for width control) === */
+    tbody[title="<?=$widget_title?>"] {
+        table-layout: fixed;
+        width: 100%;
+    }
 
-   .as-icon-img { width: 32px; height: 32px; }
+    tbody[title="<?=$widget_title?>"] td {
+        max-width: 100%;
+        overflow: hidden;
+    }
 
-   /* Base Row Styling */
-   .as-row, .as-header-row { 
-        display: flex; 
+    #activestreams_streams {
+        max-width: 100%;
+        overflow: hidden;
+        box-sizing: border-box;
+    }
+
+    /* === ICON === */
+    .as-icon-img { 
+        width: 32px; 
+        height: 32px; 
+    }
+
+    /* === GRID LAYOUT === */
+    #activestreams_streams .as-row,
+    #activestreams_streams .as-header-row,
+    .as-header-row { 
+        display: grid; 
+        grid-template-columns: 20px minmax(0, 3.5fr) minmax(0, 2fr) minmax(0, 1.5fr) minmax(0, 2.5fr);
         align-items: center; 
         width: 100%;
-        box-sizing: border-box; /* Critical for padding calculations */
-   }
+        max-width: 100%;
+        min-width: 0;
+        overflow: hidden;
+        box-sizing: border-box;
+        gap: 5px;
+    }
     
-   .as-row { 
+    #activestreams_streams .as-row { 
         border-bottom: 1px solid rgba(255,255,255,0.05); 
         padding: 6px 0; 
-   }
-   .as-row:last-child { border-bottom: none; }
-   
-   /* --- DEFAULT LAYOUT (Mobile / Narrow Column First) --- */
-   /* We design for the smallest case first, then expand */
-   
-   .as-server {
-        width: 24px;
-        flex-shrink: 0;
+    }
+
+    #activestreams_streams .as-row:last-child { 
+        border-bottom: none; 
+    }
+
+    /* === TRANSCODE INDICATOR === */
+    #activestreams_streams .as-transcode { 
+        font-size: 10px; 
+        opacity: 0.7; 
+        margin-right: 4px; 
+    }
+
+    /* === COLUMN BASE STYLES (Grid controls width, not these) === */
+    #activestreams_streams .as-server,
+    #activestreams_streams .as-name,
+    #activestreams_streams .as-device,
+    #activestreams_streams .as-user,
+    #activestreams_streams .as-time,
+    .as-header-row .as-server,
+    .as-header-row .as-name,
+    .as-header-row .as-device,
+    .as-header-row .as-user,
+    .as-header-row .as-time {
+        width: auto;
+        min-width: 0; /* Critical for ellipsis in grid */
+        padding: 0;
+        overflow: hidden;
+    }
+
+    /* === INDIVIDUAL COLUMN STYLES === */
+    #activestreams_streams .as-server,
+    .as-header-row .as-server {
         text-align: center;
-   }
+    }
     
-   .as-name { 
-        flex: 1 1 auto; /* Grow to fill space */
-        width: 0;       /* Allow shrinking below content size */
-        min-width: 0;
+    #activestreams_streams .as-name,
+    .as-header-row .as-name { 
         white-space: nowrap;
         overflow: hidden;
         text-overflow: ellipsis;
-        padding-right: 10px;
-   }
+        padding-right: 5px;
+    }
 
-   /* Hidden by default on small/narrow layouts */
-   .as-device, 
-   .as-user { 
-        display: none; 
-   }
+    #activestreams_streams .as-device,
+    .as-header-row .as-device { 
+        text-align: center;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
 
-   .as-time { 
-        flex: 0 0 auto; 
-        text-align: right;
+    #activestreams_streams .as-user,
+    .as-header-row .as-user { 
+        text-align: center;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+
+    #activestreams_streams .as-time,
+    .as-header-row .as-time { 
+        text-align: center;
         font-family: monospace;
         font-size: 12px;
         white-space: nowrap;
-   }
+        overflow: hidden;
+    }
 
-   /* Header styling */
-   .as-header-row {
+    /* === HEADER ROW === */
+    .as-header-row {
         opacity: 0.6;
         font-size: 11px;
         text-transform: uppercase;
         padding-bottom: 5px;
         border-bottom: 1px solid rgba(255,255,255,0.1);
         margin-bottom: 5px;
-   }
+    }
     
-   .as-header-row .as-server { visibility: hidden; }
+    .as-header-row .as-server { 
+        visibility: hidden; 
+    }
 
-   /* --- EXPANSION LOGIC (Use @container, not @media) --- */
-   
-   /* If Widget > 400px: Show User */
-   @container as-widget (min-width: 400px) {
-       .as-user {
-           display: block;
-           width: 15%;
-           text-align: center;
-           white-space: nowrap;
-           overflow: hidden;
-           text-overflow: ellipsis;
-       }
-   }
+    /* === MOBILE (Max Width 600px) === */
+    @media only screen and (max-width: 600px) {
+        #activestreams_streams .as-row,
+        #activestreams_streams .as-header-row,
+        .as-header-row {
+            grid-template-columns: minmax(0, 1fr) auto;
+        }
 
-   /* If Widget > 550px: Show Device AND User */
-   @container as-widget (min-width: 550px) {
-       .as-device {
-           display: block;
-           width: 20%;
-           text-align: center;
-           white-space: nowrap;
-           overflow: hidden;
-           text-overflow: ellipsis;
-       }
-       /* Adjust Name width now that we have more columns */
-       .as-name {
-           width: 35%; 
-           flex: 0 0 auto; /* Stop growing, enforce width */
-       }
-       .as-time {
-           width: 25%;
-       }
-   }
-
-   /* Utilities */
-   .as-row img {
-       border-radius: 4px;
-       max-height: 24px;
-       max-width: 24px;
-       object-fit: contain;
-       display: block;
-   }
-   
-   /* Scroll Animation */
-   .as-scrollable {
-       display: block;
-       overflow: hidden;
-       mask-image: linear-gradient(to right, transparent 0%, black 5%, black 95%, transparent 100%);
-   }
-   .as-scroll-inner.as-overflowing {
-       animation: as-scroll-text var(--scroll-duration, 10s) linear infinite alternate;
-   }
-   @keyframes as-scroll-text {
-       0%, 15% { transform: translateX(0); }
-       85%, 100% { transform: translateX(var(--scroll-distance, -50px)); }
-   }
+        #activestreams_streams .as-server,
+        #activestreams_streams .as-device,
+        #activestreams_streams .as-user,
+        .as-header-row .as-server,
+        .as-header-row .as-device,
+        .as-header-row .as-user { 
+            display: none; 
+        }
+        
+        #activestreams_streams .as-name,
+        .as-header-row .as-name { 
+            padding-right: 10px;
+        }
+        
+        #activestreams_streams .as-time,
+        .as-header-row .as-time { 
+            padding-left: 10px;
+        }
+    }
 </style>
 
 <?php
@@ -200,7 +209,7 @@ $mytiles[$plugin]['column1'] = <<<EOT
     <td>
         <div id="activestreams_streams">
             <div id="as_retrieving">
-                <p class="as-loading-message">_(Retrieving Data...)_</p>
+                <p align="center" style="font-style:italic;text-align:center;padding-top:10px;">_(Retrieving Data...)_</p>
             </div>
         </div>
     </td>
@@ -226,196 +235,21 @@ EOT;
 
 <script>
     var asPollInterval = <?=$poll_interval;?>;
-    var asEnableTextScroll = <?=$enable_text_scroll ? 'true' : 'false';?>;
-
-    function setupTextScrolling() {
-        if (!asEnableTextScroll) return;
-
-        $('#activestreams_streams .as-name, #activestreams_streams .as-device, #activestreams_streams .as-user').each(function() {
-            var $el = $(this);
-            if ($el.hasClass('as-scrollable') || $el.closest('.as-header-row').length) return;
-
-            var content = $el.html();
-            var title = $el.attr('title') || $el.text();
-
-            $el.addClass('as-scrollable');
-            $el.html('<span class="as-scroll-inner">' + content + '</span>');
-            $el.attr('title', title);
-
-            setTimeout(function() {
-                var $inner = $el.find('.as-scroll-inner');
-                var containerWidth = $el.width();
-                var textWidth = $inner[0].scrollWidth;
-
-                if (textWidth > containerWidth) {
-                    $el.addClass('as-has-overflow');
-                    $inner.addClass('as-overflowing');
-                    var overflowAmount = textWidth - containerWidth + 20;
-                    var scrollDistance = -overflowAmount;
-                    $inner[0].style.setProperty('--scroll-distance', scrollDistance + 'px');
-                    var pixelsPerSecond = 50; 
-                    var movementTime = overflowAmount / pixelsPerSecond;
-                    var totalDuration = movementTime / 0.8;
-                    $inner[0].style.setProperty('--scroll-duration', totalDuration + 's');
-                }
-            }, 10);
-        });
-    }
-
+    
     function updateActiveStreamsDashboard() {
-        if (asEnableTextScroll && $("#activestreams_streams").is(":hover")) {
-            return;
-        }
-
         $.get("/plugins/activestreams/activestreams_api.php", function(data) {
             if (data) {
+                // 1. Update list
                 $("#activestreams_streams").html(data);
-
+                
+                // 2. Update count
                 var count = $("#activestreams_streams .as-row").length;
-                if(data.indexOf("No active streams") !== -1 ||
+                if(data.indexOf("No active streams") !== -1 || 
                    data.indexOf("No servers configured") !== -1 ||
-                   data.indexOf("Connection failed") !== -1) {
-                    count = 0;
+                   data.indexOf("Connection failed") !== -1) { 
+                    count = 0; 
                 }
-
                 $("#activestreams_count").text(count);
-                setupTextScrolling();
-            }
-        });
-    }
-
-    $(function() {
-        updateActiveStreamsDashboard();
-        setInterval(updateActiveStreamsDashboard, asPollInterval);
-    });
-</script>
-
-<?php
-$mytiles[$plugin]['column1'] = <<<EOT
-<tbody class="sortable" title="{$widget_title}">
-  <tr>
-    <td>
-      <div class='tile-header' id='{$plugin}-dashboard-card'>
-        <div class='tile-header-left'>
-          <img src="{$icon_file}" class="as-icon-img icon">
-          <div class='section'>
-            <h3 class='tile-header-main' id='{$plugin}-dashboard-title'>
-              {$widget_title}
-            </h3>
-            <span id="as_count_container"><span id="activestreams_count">0</span> _(Active Stream(s))_</span>
-          </div>
-        </div>
-        <div class='tile-header-right'>
-          <div class='tile-header-right-controls'>
-            <a id="{$plugin}-settings-button" href="/Settings/ActiveStreamsSettings" title="_(Settings)_">
-              <i class="fa fa-fw fa-cog control"></i>
-            </a>
-          </div>
-        </div>
-      </div>
-    </td>
-  </tr>
-  <tr>
-    <td>            
-        <div class="as-header-row">
-            <span class="as-server"></span>
-            <span class="as-name">_(Name)_</span>
-            <span class="as-device">_(Device)_</span>
-            <span class="as-user">_(User)_</span>
-            <span class="as-time">_(Progress)_</span>
-        </div>
-    </td>
-  </tr>
-  <tr>
-    <td>
-        <div id="activestreams_streams">
-            <div id="as_retrieving">
-                <p class="as-loading-message">_(Retrieving Data...)_</p>
-            </div>
-        </div>
-    </td>
-  </tr>
-</tbody>
-EOT;
-
-// COMPATIBILITY BLOCK FOR UNRAID 7.2+
-$isResponsiveWebgui = version_compare(parse_ini_file('/etc/unraid-version')['version'] ?? "", '7.2', '>=');
-if ( ! $isResponsiveWebgui) {
-    $mytiles[$plugin]["column1"] .= <<<EOT
-        <script>
-            \$(function() {
-                \$('#{$plugin}-dashboard-title').replaceWith(function() {
-                    return \$(this).text() + "<br>";
-                });
-                \$('#{$plugin}-settings-button').prependTo('#{$plugin}-dashboard-card');
-            });
-        </script>
-EOT;
-}
-?>
-
-<script>
-    var asPollInterval = <?=$poll_interval;?>;
-    var asEnableTextScroll = <?=$enable_text_scroll ? 'true' : 'false';?>;
-
-    function setupTextScrolling() {
-        if (!asEnableTextScroll) return;
-
-        // Target columns that may overflow: name, device, user
-        $('#activestreams_streams .as-name, #activestreams_streams .as-device, #activestreams_streams .as-user').each(function() {
-            var $el = $(this);
-
-            // Skip if already processed or is header
-            if ($el.hasClass('as-scrollable') || $el.closest('.as-header-row').length) return;
-
-            var content = $el.html();
-            var title = $el.attr('title') || $el.text();
-
-            // Wrap content in inner span for scrolling
-            $el.addClass('as-scrollable');
-            $el.html('<span class="as-scroll-inner">' + content + '</span>');
-            $el.attr('title', title);
-
-            // Check if text overflows after DOM update
-            setTimeout(function() {
-                var $inner = $el.find('.as-scroll-inner');
-                var containerWidth = $el.width();
-                var textWidth = $inner[0].scrollWidth;
-
-                if (textWidth > containerWidth) {
-                    $el.addClass('as-has-overflow');
-                    $inner.addClass('as-overflowing');
-                    var overflowAmount = textWidth - containerWidth + 20;
-                    var scrollDistance = -overflowAmount;
-                    $inner[0].style.setProperty('--scroll-distance', scrollDistance + 'px');
-                    var pixelsPerSecond = 50; 
-                    var movementTime = overflowAmount / pixelsPerSecond;
-                    var totalDuration = movementTime / 0.8;
-                    $inner[0].style.setProperty('--scroll-duration', totalDuration + 's');
-                }
-            }, 10);
-        });
-    }
-
-    function updateActiveStreamsDashboard() {
-        if (asEnableTextScroll && $("#activestreams_streams").is(":hover")) {
-            return;
-        }
-
-        $.get("/plugins/activestreams/activestreams_api.php", function(data) {
-            if (data) {
-                $("#activestreams_streams").html(data);
-
-                var count = $("#activestreams_streams .as-row").length;
-                if(data.indexOf("No active streams") !== -1 ||
-                   data.indexOf("No servers configured") !== -1 ||
-                   data.indexOf("Connection failed") !== -1) {
-                    count = 0;
-                }
-
-                $("#activestreams_count").text(count);
-
-                setupTextScrolling();
             }
         });
     }
