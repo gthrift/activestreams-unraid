@@ -18,135 +18,138 @@ Icon="streams.png"
 
 <style>
     /* ---------------------------------------------------------
-       CONTAINER & LAYOUT
-       Using Flexbox to ensure columns align in the dashboard grid
+       CONTAINER
+       Force the container to respect the parent width.
     --------------------------------------------------------- */
     #activestreams_streams {
         width: 100%;
+        table-layout: fixed; /* Force rigid width logic if it were a table */
+        min-width: 0;        /* Critical for flex containers */
     }
     
-    /* Common Row Styling (Header + Content) */
+    /* ---------------------------------------------------------
+       ROWS
+    --------------------------------------------------------- */
     .as-header-row,
     .as-row {
         display: flex;
         align-items: center;
         padding: 8px 12px;
-        border-bottom: 1px solid var(--border-color, #e5e5e5); /* Fallback for older Unraid */
-        gap: 10px; /* Space between columns */
+        border-bottom: 1px solid var(--border-color, #e5e5e5);
+        gap: 12px;
+        width: 100%;        /* Ensure row fills container */
+        box-sizing: border-box; /* Include padding in width calculation */
     }
     
-    /* Remove border from the last item to blend with container */
     #activestreams_streams .as-row:last-child {
         border-bottom: none;
     }
     
     /* ---------------------------------------------------------
-       COLUMN DEFINITIONS
-       Flex properties match the data types
+       COLUMNS & TRUNCATION FIX
     --------------------------------------------------------- */
-    /* 1. Server Icon (Fixed width) */
+    /* 1. Server Icon */
     .as-server {
         flex: 0 0 24px;
         text-align: center;
     }
     
-    /* 2. Media Name (Flex Grow - takes available space) */
+    /* 2. Media Name (The Problem Area) */
     .as-name {
-        flex: 1 1 auto;
+        flex: 1 1 auto;     /* Grow to fill space */
+        width: 0;           /* CRITICAL: Allows flex item to shrink below content size */
+        min-width: 0;       /* CRITICAL: Firefox/Chrome default min-width is 'auto' */
+        
         font-weight: 600;
-        min-width: 0; /* Critical for text-overflow to work in Flexbox */
+        font-size: 0.95rem;
+        
+        /* Truncation logic (fallback if JS scrolling fails) */
+        white-space: nowrap; 
+        overflow: hidden;
+        text-overflow: ellipsis; 
     }
     
-    /* 3. Device & User (Share remaining space, but can shrink) */
+    /* 3. Device & User (Hide on small screens) */
     .as-device,
     .as-user {
-        flex: 0 1 15%; /* Target 15% width, but shrink if needed */
-        min-width: 0;
-        color: var(--text-muted, opacity: 0.8);
-        font-size: 0.9em;
+        display: none;      /* Hidden on mobile/small columns */
+        color: var(--text-muted, #888);
+        font-size: 0.85em;
+        
+        /* Ensure these don't blow out width when visible */
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
     }
     
-    /* 4. Progress/Time (Fixed width for alignment) */
+    /* 4. Time */
     .as-time {
-        flex: 0 0 50px;
+        flex: 0 0 50px;     /* Rigid width */
         text-align: right;
         font-size: 0.85em;
-        font-feature-settings: "tnum"; /* Monospaced numbers for timers */
+        font-feature-settings: "tnum";
+        color: var(--nice-blue, #2077b4);
+        white-space: nowrap;
     }
     
     /* ---------------------------------------------------------
-       HEADER SPECIFICS
-       Differentiating the label row
+       HEADER VISIBILITY FIX
     --------------------------------------------------------- */
     .as-header-row {
-        background-color: rgba(0, 0, 0, 0.03); /* Subtle offset */
+        /* Ensure background has contrast against the widget body */
+        background-color: var(--table-header-bg, #f4f4f4); 
+        border-bottom: 2px solid var(--border-color, #ddd);
+        
+        /* Force High Contrast Text */
+        color: var(--text-color, #333); 
+        opacity: 0.7; /* Slight dimming instead of hardcoded gray */
+        
         font-size: 0.75rem;
+        font-weight: 800; /* Extra bold for readability */
         text-transform: uppercase;
         letter-spacing: 0.05em;
-        font-weight: 700;
-        color: var(--header-text-color, #888);
-        border-bottom: 2px solid var(--border-color);
     }
     
-    /* Dark theme adjustments for header background */
+    /* Specific override for Unraid Black Theme */
     body.skin-black .as-header-row {
-        background-color: rgba(255, 255, 255, 0.05);
+        background-color: rgba(255, 255, 255, 0.1); /* Lighter gray background */
+        color: #fff; /* Force white text */
+        opacity: 0.9;
     }
     
     /* ---------------------------------------------------------
-       LOADING & EMPTY STATES
+       RESPONSIVE BREAKPOINTS
     --------------------------------------------------------- */
-    .as-loading-message {
-        text-align: center;
-        padding: 20px;
-        font-style: italic;
-        color: var(--text-color);
-        opacity: 0.6;
+    /* Only show User/Device if we have legitimate room (>600px) */
+    @media (min-width: 600px) {
+        .as-user {
+            display: block;
+            flex: 0 1 15%;
+            width: 0;      /* Allow shrinking */
+            min-width: 0;
+        }
+        .as-device {
+            display: block;
+            flex: 0 1 15%;
+            width: 0;      /* Allow shrinking */
+            min-width: 0;
+        }
     }
     
     /* ---------------------------------------------------------
-       SCROLLING TEXT ANIMATION
-       Required by your JS: .as-scrollable, .as-overflowing
+       SCROLLING & UTILS
     --------------------------------------------------------- */
     .as-scrollable {
         display: block;
-        overflow: hidden;
-        white-space: nowrap;
-        /* Fade out edges slightly to indicate scrolling */
-        mask-image: linear-gradient(to right, transparent, black 5%, black 95%, transparent);
-        -webkit-mask-image: linear-gradient(to right, transparent, black 5%, black 95%, transparent);
+        overflow: hidden; /* Ensures scroll container doesn't stretch parent */
     }
     
-    .as-scroll-inner {
-        display: inline-block;
-        /* Variables set by JS: --scroll-distance, --scroll-duration */
-    }
-    
-    .as-scroll-inner.as-overflowing {
-        animation: as-scroll-text var(--scroll-duration, 10s) linear infinite alternate;
-    }
-    
-    /* Pause at start and end of scroll for readability */
-    @keyframes as-scroll-text {
-        0%, 15% { transform: translateX(0); }
-        85%, 100% { transform: translateX(var(--scroll-distance, -100px)); }
-    }
-    
-    /* ---------------------------------------------------------
-       IMAGE HANDLING
-       Ensures icons from Plex/Emby don't break layout
-    --------------------------------------------------------- */
+    /* Image scaling safety */
     .as-row img {
-        border-radius: 4px;
-        vertical-align: middle;
+        max-width: 100%;
+        height: auto;
         max-height: 24px;
-        width: auto;
-    }
-    
-    /* Fix for dark icons on dark themes (optional, depends on your icon set) */
-    body.skin-black .as-device img, 
-    body.skin-black .as-server img {
-        filter: invert(1) grayscale(1); /* Makes black icons white */
+        display: block;
     }
 </style>
 
