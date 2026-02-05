@@ -15,139 +15,101 @@ Icon="streams.png"
     $icon_file = "/plugins/activestreams/{$widget_icon}.png";
 ?>
 
-<style>
-   /* ---------------------------------------------------------
-      CONTAINER CONTEXT
-   --------------------------------------------------------- */
+
    #activestreams_streams {
        width: 100%;
        container-type: inline-size;
        container-name: as-widget;
    }
 
-   .as-header-row,
-   .as-row {
-       display: grid; 
-       grid-template-columns: 24px 1fr 0px 0px 190px;
-       align-items: center;
-       gap: 10px;
-       padding: 8px 12px;
-       border-bottom: 1px solid var(--border-color, #e5e5e5);
-       box-sizing: border-box;
-   }
-   
-   #activestreams_streams .as-row:last-child {
-       border-bottom: none;
-   }
-   
+<style>
+    .as-icon-img { width: 32px; height: 32px; }
 
-   .as-server {
-       display: flex;
-       justify-content: center;
-       align-items: center;
-       font-size: 10px; /* Adjust dot size if it uses FontAwesome */
-   }
-   
-   .as-server .plex, 
-   .as-server .fa-plex,
-   .plex {
-       color: #e5a00d; 
-   }
-   
-   .as-server .emby, 
-   .as-server .fa-emby,
-   .emby {
-       color: #52b54b; 
-   }
-   
-   .as-server .jellyfin, 
-   .as-server .fa-jellyfin,
-   .jellyfin {
-       color: #aa5cc3; /* Default Jellyfin Purple */
-   }
+    /* Base Row Styling */
+    .as-row, .as-header-row { 
+        display: flex; 
+        align-items: center; 
+        width: 100%;
+        box-sizing: border-box;
+    }
+    
+    .as-row { 
+        border-bottom: 1px solid rgba(255,255,255,0.05); 
+        padding: 6px 0; 
+    }
+    .as-row:last-child { border-bottom: none; }
+    .as-transcode { font-size: 10px; opacity: 0.7; margin-right: 4px; }
 
-   .as-name {
-       font-weight: 600;
-       font-size: 0.95rem;
-       white-space: nowrap;
-       overflow: hidden;
-       text-overflow: ellipsis;
-       min-width: 0;
-   }
-   
-   .as-device,
-   .as-user {
-       color: var(--text-muted, #888);
-       font-size: 0.85em;
-       white-space: nowrap;
-       overflow: hidden;
-       text-overflow: ellipsis;
-       visibility: hidden; 
-   }
-   
-   /* Time/Status Column */
-   .as-time {
-       text-align: right;
-       font-size: 0.85em;
-       font-feature-settings: "tnum";
-       color: var(--nice-blue, #2077b4);
-       white-space: nowrap;
-       overflow: hidden;
-       text-overflow: ellipsis;
-       
-       display: flex; 
-       justify-content: flex-end;
-       align-items: center;
-       gap: 8px; 
-   }
-   
-   /* ---------------------------------------------------------
-      HEADER ROW
-   --------------------------------------------------------- */
-   .as-header-row {
-       height: 32px;
-       text-transform: uppercase;
-   }
-   
-   /* Dark Theme Header Fix */
-   body.skin-black .as-header-row {
-       color: #fff;
-       opacity: 0.9;
-   }
-   
-   /* ---------------------------------------------------------
-      CONTAINER QUERIES (Responsive Logic)
-   --------------------------------------------------------- */
-   
-   /* NARROW (<450px): Shrink Time column to save Title space */
-   @container as-widget (max-width: 450px) {
-       .as-header-row,
-       .as-row {
-           grid-template-columns: 24px 1fr 0px 0px 100px;
-       }
-   }
-   
-   /* MEDIUM (>400px): Show User */
-   @container as-widget (min-width: 400px) {
-       .as-header-row,
-       .as-row {
-           grid-template-columns: 24px 1fr 0px 80px 190px; 
-       }
-       .as-user { visibility: visible; }
-   }
-   
-   /* WIDE (>650px): Show Device + User */
-   @container as-widget (min-width: 650px) {
-       .as-header-row,
-       .as-row {
-           grid-template-columns: 24px 1fr 100px 100px 190px; 
-       }
-       .as-device, .as-user { visibility: visible; }
-   }
-   
-   /* ---------------------------------------------------------
-      UTILITIES
-   --------------------------------------------------------- */
+    /* --- DESKTOP LAYOUT --- */
+    .as-server {
+        width: 20px !important;
+        flex-shrink: 0;
+    }
+    
+    .as-name { 
+        width: 35% !important;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        padding-right: 10px;
+    }
+
+    .as-device { 
+        width: 20% !important; 
+        text-align: center !important;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+
+    .as-user { 
+        width: 15% !important; 
+        text-align: center !important;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+
+    .as-time { 
+        width: 25% !important; 
+        text-align: right !important;
+        font-family: monospace;
+        font-size: 12px;
+        white-space: nowrap;
+    }
+
+    /* Header row styling */
+    .as-header-row {
+        opacity: 0.6;
+        font-size: 11px;
+        text-transform: uppercase;
+        padding-bottom: 5px;
+        border-bottom: 1px solid rgba(255,255,255,0.1);
+        margin-bottom: 5px;
+    }
+    
+    .as-header-row .as-server { visibility: hidden; }
+
+    /* --- MOBILE OVERRIDES (Max Width 600px) --- */
+    @media only screen and (max-width: 600px) {
+        .as-device, .as-user { 
+            display: none !important; 
+        }
+        
+        .as-name { 
+            width: auto !important;     
+            flex: 1 1 auto !important;  
+            min-width: 0;
+        }
+        
+        .as-time { 
+            width: auto !important;    
+            flex: 0 0 auto !important;  
+            margin-left: auto;
+            padding-left: 10px;
+        }
+    }
+
    .as-row img {
        border-radius: 4px;
        max-height: 24px;
