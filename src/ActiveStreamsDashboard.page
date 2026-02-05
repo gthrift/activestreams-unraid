@@ -24,6 +24,11 @@ Icon="streams.png"
         --as-padding-header: 5px;
         --as-padding-mobile: 10px;
 
+        /* Typography */
+        --as-font-size-header: 11px;
+        --as-font-size-time: 12px;
+        --as-font-size-transcode: 10px;
+
         /* Colors - neutral defaults that work on most themes */
         --as-border-subtle: rgba(128, 128, 128, 0.15);
         --as-border-row: rgba(128, 128, 128, 0.1);
@@ -149,6 +154,8 @@ Icon="streams.png"
 
     /* === HEADER ROW === */
     .as-header-row {
+        /* opacity: var(--as-opacity-muted); 
+        font-size: var(--as-font-size-header); */
         text-transform: uppercase;
         padding-bottom: var(--as-padding-header);
         border-bottom: none;
