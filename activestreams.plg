@@ -23,6 +23,10 @@
         min="6.12.0">
 
 <CHANGES>
+###2026.02.04
+- Rolled back scrolling title on hover option.  Will work on reimplementing down the road.  
+- Made CSS improvements... maybe.
+
 ###2026.02.03
 - Added scroll title on hover option. (enabled in settings)
 - Fixed CSS issues
