@@ -2,8 +2,8 @@
 <!DOCTYPE PLUGIN [
 <!ENTITY name      "activestreams">
 <!ENTITY author    "gthrift">
-<!ENTITY version   "2026.02.04-beta6">
-<!ENTITY sha256    "d9cc2b0db15099c0e5cd6e53caea5640a607c01204872342541729f845a960dc">
+<!ENTITY version   "2026.02.01">
+<!ENTITY sha256    "5c524f4dc62ffa9af54addf70efc0b28c70f525e86f162a58cbb7dfce1667adb">
 <!ENTITY launch    "Settings/ActiveStreamsSettings">
 <!ENTITY gitURL    "https://raw.githubusercontent.com/gthrift/activestreams-unraid/main">
 <!ENTITY archive   "&gitURL;/archive/&name;-&version;.txz">
@@ -24,94 +24,7 @@
         min="6.12.0">
 
 <CHANGES>
-###2026.02.04-beta6
-- Beta build for testing
-
-###2026.02.04-beta5
-- Beta build for testing
-
-###2026.02.04-beta4
-- Beta build for testing
-
-###2026.02.04-beta3
-- Beta build for testing
-
-###2026.02.04-beta2
-- Beta build for testing
-
-###2026.02.04-beta1
-- Beta build for testing
-
-###2026.02.04-beta10
-- Beta build for testing
-
-###2026.02.04-beta10
-- Beta build for testing
-
-###2026.02.04-beta8
-- Beta build for testing
-
-###2026.02.04-beta4
-- Beta build for testing
-
-###2026.02.04-beta3
-- Beta build for testing
-
-###2026.02.04-beta2
-- Beta build for testing
-
-###2026.02.04-beta1
-- Beta build for testing
-
-###2026.02.03-beta7
-- Beta build for testing
-
-###2026.02.03-beta6
-- Beta build for testing
-
-###2026.02.03-beta5
-- Beta build for testing
-
-###2026.02.03-beta4
-- Beta build for testing
-
-###2026.02.03-beta3
-- Beta build for testing
-
-###2026.02.03-beta2
-- Beta build for testing
-
-###2026.02.03-beta1
-- Beta build for testing
-
-###2026.02.02-beta8
-- Beta build for testing
-
-###2026.02.02-beta7
-- Beta build for testing
-
-###2026.02.02-beta6
-- Beta build for testing
-
-###2026.02.02-beta5
-- Beta build for testing
-
-###2026.02.02-beta4
-- Beta build for testing
-
-###2026.02.02-beta3
-- Beta build for testing
-
-###2026.02.02-beta2
-- fix width
-
-###2026.02.02-beta1
-- Fix widget width
-
-###2026.02.02-beta1
-- Beta build for testing
-
-###2026.02.02-beta1
+###2026.02.01
 - Beta build for testing
 - Now installs from pre-built archive (same as production)
 - Includes SHA256 verification
