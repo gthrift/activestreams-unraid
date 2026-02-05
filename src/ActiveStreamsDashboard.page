@@ -15,105 +15,139 @@ Icon="streams.png"
     $icon_file = "/plugins/activestreams/{$widget_icon}.png";
 ?>
 
+
 <style>
-    /* Prevent table cell from exceeding container */
-    tbody[title="<?=$widget_title?>"] td {
-        overflow: hidden;
-    }
-
-    /* Container - fill column, never exceed it */
+    /* ---------------------------------------------------------
+       CONTAINER & LAYOUT
+       Using Flexbox to ensure columns align in the dashboard grid
+    --------------------------------------------------------- */
     #activestreams_streams {
-        overflow: hidden;
         width: 100%;
-        box-sizing: border-box;
     }
-
-    .as-icon-img { width: 32px; height: 32px; }
-
-    /* Row layout - flexbox adapts to any width */
-    .as-row, .as-header-row {
+    
+    /* Common Row Styling (Header + Content) */
+    .as-header-row,
+    .as-row {
         display: flex;
         align-items: center;
-        width: 100%;
-        box-sizing: border-box;
-        overflow: hidden;
-        gap: 4px;
+        padding: 8px 12px;
+        border-bottom: 1px solid var(--border-color, #e5e5e5); /* Fallback for older Unraid */
+        gap: 10px; /* Space between columns */
     }
-
-    .as-row {
-        padding: 4px 0;
-        border-bottom: 1px solid rgba(128,128,128,0.08);
+    
+    /* Remove border from the last item to blend with container */
+    #activestreams_streams .as-row:last-child {
+        border-bottom: none;
     }
-    .as-row:last-child { border-bottom: none; }
-
-    /* All columns: truncate with ellipsis, never wrap */
-    .as-server, .as-name, .as-device, .as-user, .as-time {
-        min-width: 0;
-        overflow: hidden;
-        white-space: nowrap;
-        text-overflow: ellipsis;
-    }
-
-    /* Column sizing via flex ratios - no fixed widths */
-    .as-server { flex: 0 0 auto; text-align: center; }
-    .as-name   { flex: 3.5; }
-    .as-device { flex: 2; text-align: center; }
-    .as-user   { flex: 1.5; text-align: center; }
-    .as-time   { flex: 2.5; text-align: right; font-family: monospace; font-size: 0.9em; }
-
-    .as-transcode { font-size: 0.85em; opacity: 0.7; margin-right: 4px; }
-
-    /* Header row */
-    .as-header-row {
-        opacity: 0.6;
-        font-size: 0.9em;
-        text-transform: uppercase;
-        padding-bottom: 4px;
-        border-bottom: 1px solid rgba(128,128,128,0.15);
-        margin-bottom: 4px;
-    }
-    .as-header-row .as-server { visibility: hidden; }
-
-    /* Loading state */
-    .as-loading-message {
-        font-style: italic;
+    
+    /* ---------------------------------------------------------
+       COLUMN DEFINITIONS
+       Flex properties match the data types
+    --------------------------------------------------------- */
+    /* 1. Server Icon (Fixed width) */
+    .as-server {
+        flex: 0 0 24px;
         text-align: center;
-        padding: 8px 0;
     }
-
-    /* Narrow widths: drop device + user, keep name + progress readable */
-    @media (max-width: 768px) {
-        .as-server, .as-device, .as-user,
-        .as-header-row .as-server,
-        .as-header-row .as-device,
-        .as-header-row .as-user {
-            display: none;
-        }
-        .as-name { flex: 1; }
-        .as-time { flex: 0 0 auto; }
+    
+    /* 2. Media Name (Flex Grow - takes available space) */
+    .as-name {
+        flex: 1 1 auto;
+        font-weight: 600;
+        min-width: 0; /* Critical for text-overflow to work in Flexbox */
     }
-
-    <?php if ($enable_text_scroll): ?>
-    /* Text scrolling on hover */
-    @keyframes as-text-scroll {
-        0%, 10% { transform: translateX(0); }
-        90%, 100% { transform: translateX(var(--scroll-distance, -50%)); }
+    
+    /* 3. Device & User (Share remaining space, but can shrink) */
+    .as-device,
+    .as-user {
+        flex: 0 1 15%; /* Target 15% width, but shrink if needed */
+        min-width: 0;
+        color: var(--text-muted, opacity: 0.8);
+        font-size: 0.9em;
     }
-
-    #activestreams_streams .as-scrollable {
-        position: relative;
+    
+    /* 4. Progress/Time (Fixed width for alignment) */
+    .as-time {
+        flex: 0 0 50px;
+        text-align: right;
+        font-size: 0.85em;
+        font-feature-settings: "tnum"; /* Monospaced numbers for timers */
     }
-
-    #activestreams_streams .as-scrollable .as-scroll-inner {
-        display: inline-block;
+    
+    /* ---------------------------------------------------------
+       HEADER SPECIFICS
+       Differentiating the label row
+    --------------------------------------------------------- */
+    .as-header-row {
+        background-color: rgba(0, 0, 0, 0.03); /* Subtle offset */
+        font-size: 0.75rem;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        font-weight: 700;
+        color: var(--header-text-color, #888);
+        border-bottom: 2px solid var(--border-color);
+    }
+    
+    /* Dark theme adjustments for header background */
+    body.skin-black .as-header-row {
+        background-color: rgba(255, 255, 255, 0.05);
+    }
+    
+    /* ---------------------------------------------------------
+       LOADING & EMPTY STATES
+    --------------------------------------------------------- */
+    .as-loading-message {
+        text-align: center;
+        padding: 20px;
+        font-style: italic;
+        color: var(--text-color);
+        opacity: 0.6;
+    }
+    
+    /* ---------------------------------------------------------
+       SCROLLING TEXT ANIMATION
+       Required by your JS: .as-scrollable, .as-overflowing
+    --------------------------------------------------------- */
+    .as-scrollable {
+        display: block;
+        overflow: hidden;
         white-space: nowrap;
+        /* Fade out edges slightly to indicate scrolling */
+        mask-image: linear-gradient(to right, transparent, black 5%, black 95%, transparent);
+        -webkit-mask-image: linear-gradient(to right, transparent, black 5%, black 95%, transparent);
     }
-
-    #activestreams_streams .as-scrollable:hover .as-scroll-inner.as-overflowing {
-        animation: as-text-scroll var(--scroll-duration, 4s) linear infinite;
-        animation-delay: 0.3s;
+    
+    .as-scroll-inner {
+        display: inline-block;
+        /* Variables set by JS: --scroll-distance, --scroll-duration */
     }
-    <?php endif; ?>
+    
+    .as-scroll-inner.as-overflowing {
+        animation: as-scroll-text var(--scroll-duration, 10s) linear infinite alternate;
+    }
+    
+    /* Pause at start and end of scroll for readability */
+    @keyframes as-scroll-text {
+        0%, 15% { transform: translateX(0); }
+        85%, 100% { transform: translateX(var(--scroll-distance, -100px)); }
+    }
+    
+    /* ---------------------------------------------------------
+       IMAGE HANDLING
+       Ensures icons from Plex/Emby don't break layout
+    --------------------------------------------------------- */
+    .as-row img {
+        border-radius: 4px;
+        vertical-align: middle;
+        max-height: 24px;
+        width: auto;
+    }
+    
+    /* Fix for dark icons on dark themes (optional, depends on your icon set) */
+    body.skin-black .as-device img, 
+    body.skin-black .as-server img {
+        filter: invert(1) grayscale(1); /* Makes black icons white */
+    }
 </style>
 
 <?php
