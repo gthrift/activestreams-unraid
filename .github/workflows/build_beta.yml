@@ -14,6 +14,8 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
 
     steps:
       - name: Checkout repository
@@ -37,20 +39,14 @@ jobs:
           mkdir -p "${PLUGIN_DIR}"
 
           # --- COPY FILES ---
-          # Use -v to see what is happening in the logs
-          # We copy EVERYTHING in src/ to catch hidden .sh files or subfolders
           cp -r -v src/* "${PLUGIN_DIR}/" 2>/dev/null || true
           cp -v metadata/*.png "${PLUGIN_DIR}/" 2>/dev/null || true
 
-          # --- FIX PERMISSIONS (CRITICAL FOR UNRAID) ---
-          echo "Setting permissions..."
-          # Directories: 755 (rwxr-xr-x) - allows traversal
+          # --- FIX PERMISSIONS ---
           find "${TEMP_DIR}" -type d -exec chmod 755 {} \;
-          # Files: 644 (rw-r--r--) - allows WebGUI/PHP to read them
           find "${TEMP_DIR}" -type f -exec chmod 644 {} \;
 
           # --- CLEANUP ---
-          # Remove Mac metadata files if they exist (prevents garbage in plugin)
           find "${TEMP_DIR}" -name "._*" -delete
 
           # --- VERIFICATION ---
@@ -62,14 +58,12 @@ jobs:
 
           # --- CREATE ARCHIVE ---
           ARCHIVE_NAME="${PLUGIN_NAME}-${VERSION}.txz"
-          echo "Creating archive: ${ARCHIVE_NAME}"
-
+          
           cd "${TEMP_DIR}"
-          # FORCE ROOT OWNERSHIP HERE
           tar --owner=0 --group=0 -cJf "${GITHUB_WORKSPACE}/archive/${ARCHIVE_NAME}" .
           cd "${GITHUB_WORKSPACE}"
 
-          # Generate SHA256 (preferred for security over MD5)
+          # Generate SHA256
           SHA256_HASH=$(sha256sum "archive/${ARCHIVE_NAME}" | awk '{print $1}')
           echo "${SHA256_HASH}" > "archive/${PLUGIN_NAME}-${VERSION}.sha256"
 
@@ -80,37 +74,23 @@ jobs:
 
           rm -rf "${TEMP_DIR}"
 
-          echo ""
           echo "Beta archive created: archive/${ARCHIVE_NAME}"
-          echo "SHA256: ${SHA256_HASH}"
 
-      - name: Update test plg file with new beta version
+      - name: Update test plg file
         run: |
           VERSION="${{ github.event.inputs.version }}"
           RELEASE_NOTES="${{ github.event.inputs.release_notes }}"
 
-          echo "Updating activestreams_test.plg..."
-          echo "  Version: ${VERSION}"
-          echo "  SHA256: ${SHA256_HASH}"
-
-          # Update version in plg file
+          # Update version and hash in plg file
           sed -i 's/<!ENTITY version[[:space:]]*"[^"]*"/<!ENTITY version   "'"${VERSION}"'"/' activestreams_test.plg
-
-          # Update SHA256 in plg file
           sed -i 's/<!ENTITY sha256[[:space:]]*"[^"]*"/<!ENTITY sha256    "'"${SHA256_HASH}"'"/' activestreams_test.plg
 
           # Add release notes if provided
           if [ -n "${RELEASE_NOTES}" ]; then
-            echo "  Adding release notes..."
-
-            # Convert \n to actual newlines
             FORMATTED_NOTES=$(printf '%s' "${RELEASE_NOTES}" | sed 's/\\n/\n/g')
-
-            # Create the new changelog entry in a temp file to avoid sed escaping issues
             TEMP_FILE=$(mktemp)
             printf '###%s\n%s\n\n' "${VERSION}" "${FORMATTED_NOTES}" > "${TEMP_FILE}"
 
-            # Use awk to insert content after <CHANGES> tag (more robust than sed for this use case)
             awk '
             /<CHANGES>/ {
                 print
@@ -122,28 +102,51 @@ jobs:
             }
             {print}
             ' activestreams_test.plg > activestreams_test.plg.tmp && mv activestreams_test.plg.tmp activestreams_test.plg
-
             rm "${TEMP_FILE}"
-
-            echo "  Release notes added"
           fi
 
-          echo ""
-          echo "Updated test plg file:"
-          grep -A 5 "<CHANGES>" activestreams_test.plg | head -10
-
-      - name: Commit and push changes
+      - name: Commit and push to Current Branch
         run: |
-          git config --local user.email "action@github.com"
-          git config --local user.name "GitHub Action"
+          git config --global user.email "action@github.com"
+          git config --global user.name "GitHub Action"
 
           git add archive/ activestreams_test.plg
 
-          # Commit (don't fail if no changes)
+          # Commit to the branch that triggered the workflow
           git diff --staged --quiet && echo "No changes to commit" || git commit -m "Build beta version ${{ github.event.inputs.version }}"
-
-          # Push changes back to the current branch
+          
+          echo "Pushing to ${GITHUB_REF_NAME}..."
           git push origin HEAD:${GITHUB_REF_NAME}
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Sync beta files to Main
+        # Only run if we aren't already on main
+        if: github.ref_name != 'main'
+        run: |
+          echo "------------------------------------------------"
+          echo "SYNCING BETA FILES TO MAIN BRANCH"
+          echo "------------------------------------------------"
+          
+          # Fetch main to ensure we have the latest ref
+          git fetch origin main
+
+          # Checkout main
+          git checkout main
+
+          # Checkout specifically the NEW files from the source branch (origin/BRANCH_NAME)
+          # We grab the new archive, the sha256 file, and the updated plg file
+          echo "Pulling files from origin/${GITHUB_REF_NAME}..."
+          git checkout origin/${GITHUB_REF_NAME} -- archive/ activestreams_test.plg
+
+          # Stage the files on main
+          git add archive/ activestreams_test.plg
+
+          # Commit to main
+          git diff --staged --quiet && echo "No changes to commit to main" || git commit -m "Sync beta ${{ github.event.inputs.version }} from ${GITHUB_REF_NAME}"
+
+          echo "Pushing to main..."
+          git push origin main
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
@@ -157,12 +160,16 @@ jobs:
           echo " Version: ${VERSION}"
           echo " Archive: archive/${ARCHIVE_NAME}"
           echo " SHA256:  ${SHA256_HASH}"
-          echo " Branch:  ${GITHUB_REF_NAME}"
+          echo ""
+          echo " Files updated on branches:" 
+          echo "   1. ${GITHUB_REF_NAME}"
+          echo "   2. main"
           echo ""
           echo " To install this beta on Unraid:"
           echo " 1. Go to Plugins > Install Plugin"
           echo " 2. Enter the following URL:"
           echo ""
-          echo "    https://raw.githubusercontent.com/gthrift/activestreams-unraid/${GITHUB_REF_NAME}/activestreams_test.plg"
+          # We point the URL to main, as that is now the consistent source of truth for the test plg
+          echo "    https://raw.githubusercontent.com/${{ github.repository }}/main/activestreams_test.plg"
           echo ""
           echo "==========================================="
