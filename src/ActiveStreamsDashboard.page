@@ -1,179 +1,332 @@
-<style>
-/* ---------------------------------------------------------
-   CONTAINER CONTEXT
---------------------------------------------------------- */
-#activestreams_streams {
-    width: 100%;
-    container-type: inline-size;
-    container-name: as-widget;
-}
-
-/* ---------------------------------------------------------
-   GRID LAYOUT
-   1. Server Dot (24px)
-   2. Name (1fr)
-   3. Device (Hidden/0px)
-   4. User (Hidden/0px)
-   5. Time/Status (190px)
---------------------------------------------------------- */
-.as-header-row,
-.as-row {
-    display: grid; 
-    grid-template-columns: 24px 1fr 0px 0px 190px;
-    align-items: center;
-    gap: 10px;
-    padding: 8px 12px;
-    border-bottom: 1px solid var(--border-color, #e5e5e5);
-    box-sizing: border-box;
-}
-
-#activestreams_streams .as-row:last-child {
-    border-bottom: none;
-}
-
-/* ---------------------------------------------------------
-   SERVER DOT COLUMN (The colored indicator)
---------------------------------------------------------- */
-.as-server {
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    font-size: 10px; /* Adjust dot size if it uses FontAwesome */
-}
-
-/* --- SERVER BRAND COLORS --- */
-/* These assume your PHP adds classes like 'plex', 'emby', or 'jellyfin' 
-   to the icon or span inside .as-server */
-
-/* Plex (Orange) */
-.as-server .plex, 
-.as-server .fa-plex,
-.plex {
-    color: #e5a00d; 
-}
-
-/* Emby (Green) */
-.as-server .emby, 
-.as-server .fa-emby,
-.emby {
-    color: #52b54b; 
-}
-
-/* Jellyfin (Purple/Blue) */
-.as-server .jellyfin, 
-.as-server .fa-jellyfin,
-.jellyfin {
-    color: #aa5cc3; /* Default Jellyfin Purple */
-}
-
-/* ---------------------------------------------------------
-   DATA COLUMNS
---------------------------------------------------------- */
-.as-name {
-    font-weight: 600;
-    font-size: 0.95rem;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    min-width: 0;
-}
-
-.as-device,
-.as-user {
-    color: var(--text-muted, #888);
-    font-size: 0.85em;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    visibility: hidden; 
-}
-
-/* Time/Status Column */
-.as-time {
-    text-align: right;
-    font-size: 0.85em;
-    font-feature-settings: "tnum";
-    color: var(--nice-blue, #2077b4);
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
+Menu="Dashboard"
+Icon="streams.png"
+---
+<?php
+    $plugin = "activestreams";
+    $cfg = parse_ini_file("/boot/config/plugins/activestreams/activestreams.cfg");
+    $poll_interval = isset($cfg['POLL_INTERVAL']) ? (int)$cfg['POLL_INTERVAL'] * 1000 : 5000;
     
-    display: flex; 
-    justify-content: flex-end;
-    align-items: center;
-    gap: 8px; 
-}
+    // Get widget customization
+    $widget_icon = $cfg['WIDGET_ICON'] ?? 'streams';
+    $widget_title = $cfg['WIDGET_TITLE'] ?? 'Active Streams';
+    $enable_text_scroll = ($cfg['ENABLE_TEXT_SCROLL'] ?? '0') === '1';
 
-/* ---------------------------------------------------------
-   HEADER ROW
---------------------------------------------------------- */
-.as-header-row {
-    background-color: var(--table-header-bg, rgba(0,0,0,0.03));
-    height: 32px;
-    font-size: 0.75rem;
-    font-weight: 700;
-    text-transform: uppercase;
-    color: var(--header-text-color, #666);
-}
+    // Map icon to file
+    $icon_file = "/plugins/activestreams/{$widget_icon}.png";
+?>
 
-/* Dark Theme Header Fix */
-body.skin-black .as-header-row {
-    background-color: rgba(255, 255, 255, 0.1);
-    color: #fff;
-    opacity: 0.9;
-}
-
-/* ---------------------------------------------------------
-   CONTAINER QUERIES (Responsive Logic)
---------------------------------------------------------- */
-
-/* NARROW (<450px): Shrink Time column to save Title space */
-@container as-widget (max-width: 450px) {
-    .as-header-row,
-    .as-row {
-        grid-template-columns: 24px 1fr 0px 0px 100px;
-    }
-}
-
-/* MEDIUM (>400px): Show User */
-@container as-widget (min-width: 400px) {
-    .as-header-row,
-    .as-row {
-        grid-template-columns: 24px 1fr 0px 80px 190px; 
-    }
-    .as-user { visibility: visible; }
-}
-
-/* WIDE (>650px): Show Device + User */
-@container as-widget (min-width: 650px) {
-    .as-header-row,
-    .as-row {
-        grid-template-columns: 24px 1fr 100px 100px 190px; 
-    }
-    .as-device, .as-user { visibility: visible; }
-}
-
-/* ---------------------------------------------------------
-   UTILITIES
---------------------------------------------------------- */
-.as-row img {
-    border-radius: 4px;
-    max-height: 24px;
-    max-width: 24px;
-    object-fit: contain;
-    display: block;
-}
-
-.as-scrollable {
-    display: block;
-    overflow: hidden;
-    mask-image: linear-gradient(to right, transparent 0%, black 5%, black 95%, transparent 100%);
-}
-.as-scroll-inner.as-overflowing {
-    animation: as-scroll-text var(--scroll-duration, 10s) linear infinite alternate;
-}
-@keyframes as-scroll-text {
-    0%, 15% { transform: translateX(0); }
-    85%, 100% { transform: translateX(var(--scroll-distance, -50px)); }
-}
+<style>
+   /* ---------------------------------------------------------
+      CONTAINER CONTEXT
+   --------------------------------------------------------- */
+   #activestreams_streams {
+       width: 100%;
+       container-type: inline-size;
+       container-name: as-widget;
+   }
+   
+   /* ---------------------------------------------------------
+      GRID LAYOUT
+      1. Server Dot (24px)
+      2. Name (1fr)
+      3. Device (Hidden/0px)
+      4. User (Hidden/0px)
+      5. Time/Status (190px)
+   --------------------------------------------------------- */
+   .as-header-row,
+   .as-row {
+       display: grid; 
+       grid-template-columns: 24px 1fr 0px 0px 190px;
+       align-items: center;
+       gap: 10px;
+       padding: 8px 12px;
+       border-bottom: 1px solid var(--border-color, #e5e5e5);
+       box-sizing: border-box;
+   }
+   
+   #activestreams_streams .as-row:last-child {
+       border-bottom: none;
+   }
+   
+   /* ---------------------------------------------------------
+      SERVER DOT COLUMN (The colored indicator)
+   --------------------------------------------------------- */
+   .as-server {
+       display: flex;
+       justify-content: center;
+       align-items: center;
+       font-size: 10px; /* Adjust dot size if it uses FontAwesome */
+   }
+   
+   /* --- SERVER BRAND COLORS --- */
+   /* These assume your PHP adds classes like 'plex', 'emby', or 'jellyfin' 
+      to the icon or span inside .as-server */
+   
+   /* Plex (Orange) */
+   .as-server .plex, 
+   .as-server .fa-plex,
+   .plex {
+       color: #e5a00d; 
+   }
+   
+   /* Emby (Green) */
+   .as-server .emby, 
+   .as-server .fa-emby,
+   .emby {
+       color: #52b54b; 
+   }
+   
+   /* Jellyfin (Purple/Blue) */
+   .as-server .jellyfin, 
+   .as-server .fa-jellyfin,
+   .jellyfin {
+       color: #aa5cc3; /* Default Jellyfin Purple */
+   }
+   
+   /* ---------------------------------------------------------
+      DATA COLUMNS
+   --------------------------------------------------------- */
+   .as-name {
+       font-weight: 600;
+       font-size: 0.95rem;
+       white-space: nowrap;
+       overflow: hidden;
+       text-overflow: ellipsis;
+       min-width: 0;
+   }
+   
+   .as-device,
+   .as-user {
+       color: var(--text-muted, #888);
+       font-size: 0.85em;
+       white-space: nowrap;
+       overflow: hidden;
+       text-overflow: ellipsis;
+       visibility: hidden; 
+   }
+   
+   /* Time/Status Column */
+   .as-time {
+       text-align: right;
+       font-size: 0.85em;
+       font-feature-settings: "tnum";
+       color: var(--nice-blue, #2077b4);
+       white-space: nowrap;
+       overflow: hidden;
+       text-overflow: ellipsis;
+       
+       display: flex; 
+       justify-content: flex-end;
+       align-items: center;
+       gap: 8px; 
+   }
+   
+   /* ---------------------------------------------------------
+      HEADER ROW
+   --------------------------------------------------------- */
+   .as-header-row {
+       background-color: var(--table-header-bg, rgba(0,0,0,0.03));
+       height: 32px;
+       font-size: 0.75rem;
+       font-weight: 700;
+       text-transform: uppercase;
+       color: var(--header-text-color, #666);
+   }
+   
+   /* Dark Theme Header Fix */
+   body.skin-black .as-header-row {
+       background-color: rgba(255, 255, 255, 0.1);
+       color: #fff;
+       opacity: 0.9;
+   }
+   
+   /* ---------------------------------------------------------
+      CONTAINER QUERIES (Responsive Logic)
+   --------------------------------------------------------- */
+   
+   /* NARROW (<450px): Shrink Time column to save Title space */
+   @container as-widget (max-width: 450px) {
+       .as-header-row,
+       .as-row {
+           grid-template-columns: 24px 1fr 0px 0px 100px;
+       }
+   }
+   
+   /* MEDIUM (>400px): Show User */
+   @container as-widget (min-width: 400px) {
+       .as-header-row,
+       .as-row {
+           grid-template-columns: 24px 1fr 0px 80px 190px; 
+       }
+       .as-user { visibility: visible; }
+   }
+   
+   /* WIDE (>650px): Show Device + User */
+   @container as-widget (min-width: 650px) {
+       .as-header-row,
+       .as-row {
+           grid-template-columns: 24px 1fr 100px 100px 190px; 
+       }
+       .as-device, .as-user { visibility: visible; }
+   }
+   
+   /* ---------------------------------------------------------
+      UTILITIES
+   --------------------------------------------------------- */
+   .as-row img {
+       border-radius: 4px;
+       max-height: 24px;
+       max-width: 24px;
+       object-fit: contain;
+       display: block;
+   }
+   
+   .as-scrollable {
+       display: block;
+       overflow: hidden;
+       mask-image: linear-gradient(to right, transparent 0%, black 5%, black 95%, transparent 100%);
+   }
+   .as-scroll-inner.as-overflowing {
+       animation: as-scroll-text var(--scroll-duration, 10s) linear infinite alternate;
+   }
+   @keyframes as-scroll-text {
+       0%, 15% { transform: translateX(0); }
+       85%, 100% { transform: translateX(var(--scroll-distance, -50px)); }
+   }
 </style>
+
+<?php
+$mytiles[$plugin]['column1'] = <<<EOT
+<tbody class="sortable" title="{$widget_title}">
+  <tr>
+    <td>
+      <div class='tile-header' id='{$plugin}-dashboard-card'>
+        <div class='tile-header-left'>
+          <img src="{$icon_file}" class="as-icon-img icon">
+          <div class='section'>
+            <h3 class='tile-header-main' id='{$plugin}-dashboard-title'>
+              {$widget_title}
+            </h3>
+            <span id="as_count_container"><span id="activestreams_count">0</span> _(Active Stream(s))_</span>
+          </div>
+        </div>
+        <div class='tile-header-right'>
+          <div class='tile-header-right-controls'>
+            <a id="{$plugin}-settings-button" href="/Settings/ActiveStreamsSettings" title="_(Settings)_">
+              <i class="fa fa-fw fa-cog control"></i>
+            </a>
+          </div>
+        </div>
+      </div>
+    </td>
+  </tr>
+  <tr>
+    <td>            
+        <div class="as-header-row">
+            <span class="as-server"></span>
+            <span class="as-name">_(Name)_</span>
+            <span class="as-device">_(Device)_</span>
+            <span class="as-user">_(User)_</span>
+            <span class="as-time">_(Progress)_</span>
+        </div>
+    </td>
+  </tr>
+  <tr>
+    <td>
+        <div id="activestreams_streams">
+            <div id="as_retrieving">
+                <p class="as-loading-message">_(Retrieving Data...)_</p>
+            </div>
+        </div>
+    </td>
+  </tr>
+</tbody>
+EOT;
+
+// COMPATIBILITY BLOCK FOR UNRAID 7.2+
+$isResponsiveWebgui = version_compare(parse_ini_file('/etc/unraid-version')['version'] ?? "", '7.2', '>=');
+if ( ! $isResponsiveWebgui) {
+    $mytiles[$plugin]["column1"] .= <<<EOT
+        <script>
+            \$(function() {
+                \$('#{$plugin}-dashboard-title').replaceWith(function() {
+                    return \$(this).text() + "<br>";
+                });
+                \$('#{$plugin}-settings-button').prependTo('#{$plugin}-dashboard-card');
+            });
+        </script>
+EOT;
+}
+?>
+
+<script>
+    var asPollInterval = <?=$poll_interval;?>;
+    var asEnableTextScroll = <?=$enable_text_scroll ? 'true' : 'false';?>;
+
+    function setupTextScrolling() {
+        if (!asEnableTextScroll) return;
+
+        // Target columns that may overflow: name, device, user
+        $('#activestreams_streams .as-name, #activestreams_streams .as-device, #activestreams_streams .as-user').each(function() {
+            var $el = $(this);
+
+            // Skip if already processed or is header
+            if ($el.hasClass('as-scrollable') || $el.closest('.as-header-row').length) return;
+
+            var content = $el.html();
+            var title = $el.attr('title') || $el.text();
+
+            // Wrap content in inner span for scrolling
+            $el.addClass('as-scrollable');
+            $el.html('<span class="as-scroll-inner">' + content + '</span>');
+            $el.attr('title', title);
+
+            // Check if text overflows after DOM update
+            setTimeout(function() {
+                var $inner = $el.find('.as-scroll-inner');
+                var containerWidth = $el.width();
+                var textWidth = $inner[0].scrollWidth;
+
+                if (textWidth > containerWidth) {
+                    $el.addClass('as-has-overflow');
+                    $inner.addClass('as-overflowing');
+                    var overflowAmount = textWidth - containerWidth + 20;
+                    var scrollDistance = -overflowAmount;
+                    $inner[0].style.setProperty('--scroll-distance', scrollDistance + 'px');
+                    var pixelsPerSecond = 50; 
+                    var movementTime = overflowAmount / pixelsPerSecond;
+                    var totalDuration = movementTime / 0.8;
+                    $inner[0].style.setProperty('--scroll-duration', totalDuration + 's');
+                }
+            }, 10);
+        });
+    }
+
+    function updateActiveStreamsDashboard() {
+        if (asEnableTextScroll && $("#activestreams_streams").is(":hover")) {
+            return;
+        }
+
+        $.get("/plugins/activestreams/activestreams_api.php", function(data) {
+            if (data) {
+                $("#activestreams_streams").html(data);
+
+                var count = $("#activestreams_streams .as-row").length;
+                if(data.indexOf("No active streams") !== -1 ||
+                   data.indexOf("No servers configured") !== -1 ||
+                   data.indexOf("Connection failed") !== -1) {
+                    count = 0;
+                }
+
+                $("#activestreams_count").text(count);
+
+                setupTextScrolling();
+            }
+        });
+    }
+
+    $(function() {
+        updateActiveStreamsDashboard();
+        setInterval(updateActiveStreamsDashboard, asPollInterval);
+    });
+</script>
