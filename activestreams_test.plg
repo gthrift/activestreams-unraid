@@ -24,17 +24,9 @@
         min="6.12.0">
 
 <CHANGES>
-###2026.02.04-beta4
-- Beta build for testing
-
-###2026.02.04-beta3
-- Beta build for testing
-
-###2026.02.04-beta2
-- Beta build for testing
-
-###2026.02.04-beta1
-- Roll back to 2026.02.01
+###2026.02.04
+- Fixed CSS... maybe
+- Rolled back scrolling stream name for now.
 
 ###2026.02.01
 - Beta build for testing
