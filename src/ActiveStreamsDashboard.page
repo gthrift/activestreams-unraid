@@ -5,235 +5,153 @@ Icon="streams.png"
     $plugin = "activestreams";
     $cfg = parse_ini_file("/boot/config/plugins/activestreams/activestreams.cfg");
     $poll_interval = isset($cfg['POLL_INTERVAL']) ? (int)$cfg['POLL_INTERVAL'] * 1000 : 5000;
-    
-    // Get widget customization
     $widget_icon = $cfg['WIDGET_ICON'] ?? 'streams';
     $widget_title = $cfg['WIDGET_TITLE'] ?? 'Active Streams';
-    $enable_text_scroll = ($cfg['ENABLE_TEXT_SCROLL'] ?? '0') === '1';
-
-    // Map icon to file
     $icon_file = "/plugins/activestreams/{$widget_icon}.png";
 ?>
 
 <style>
-    /* === CSS CUSTOM PROPERTIES === */
-    :root {
-        /* Spacing */
-        --as-gap: 5px;
-        --as-padding-row: 6px;
-        --as-padding-header: 5px;
-        --as-padding-mobile: 10px;
+    .as-icon-img { width: 32px; height: 32px; }
 
-        /* Typography */
-        --as-font-size-header: 11px;
-        --as-font-size-time: 12px;
-        --as-font-size-transcode: 10px;
-
-        /* Colors - neutral defaults that work on most themes */
-        --as-border-subtle: rgba(128, 128, 128, 0.15);
-        --as-border-row: rgba(128, 128, 128, 0.1);
-        --as-opacity-muted: 0.6;
-        --as-opacity-transcode: 0.7;
-
-        /* Icon */
-        --as-icon-size: 32px;
-    }
-
-    /* Theme: Dark (black, dark) */
-    .Theme--black:root,
-    .Theme--dark:root {
-        --as-border-subtle: rgba(255, 255, 255, 0.1);
-        --as-border-row: rgba(255, 255, 255, 0.05);
-    }
-
-    /* Theme: Light (white, azure, gray) */
-    .Theme--white:root,
-    .Theme--azure:root,
-    .Theme--gray:root {
-        --as-border-subtle: rgba(0, 0, 0, 0.12);
-        --as-border-row: rgba(0, 0, 0, 0.06);
-    }
-
-    /* === CONTAINER CONSTRAINTS === */
+    /* Constrain the table structure to prevent widget expansion */
     tbody[title="<?=$widget_title?>"] {
         table-layout: fixed;
         width: 100%;
     }
 
     tbody[title="<?=$widget_title?>"] td {
-        max-width: 100%;
+        width: 100%;
+        max-width: 0;
         overflow: hidden;
     }
 
-    #activestreams_streams {
-        max-width: 100%;
-        overflow: hidden;
-        box-sizing: border-box;
-    }
-
-    /* === ICON === */
-    .as-icon-img {
-        width: var(--as-icon-size);
-        height: var(--as-icon-size);
-    }
-
-    /* === GRID LAYOUT === */
-    #activestreams_streams .as-row,
-    #activestreams_streams .as-header-row,
+    /* Prevent widget from growing with long titles */
+    #activestreams_streams,
     .as-header-row {
-        display: grid;
-        grid-template-columns: 20px minmax(0, 3.5fr) minmax(0, 2fr) minmax(0, 1.5fr) minmax(0, 2.5fr);
-        align-items: center;
         width: 100%;
         max-width: 100%;
-        min-width: 0;
         overflow: hidden;
+    }
+
+    .as-row, .as-header-row {
+        display: flex;
+        align-items: center;
+        width: 100%;
         box-sizing: border-box;
-        gap: var(--as-gap);
     }
 
-    #activestreams_streams .as-row {
-        border-bottom: none;
-        padding: var(--as-padding-row) 0;
-    }
-
-    #activestreams_streams .as-row:last-child {
-        border-bottom: none;
-    }
-
-    /* === TRANSCODE INDICATOR === */
-    #activestreams_streams .as-transcode {
-        font-size: var(--as-font-size-transcode);
-        opacity: var(--as-opacity-transcode);
-        margin-right: 4px;
-    }
-
-    /* === COLUMN BASE STYLES === */
-    #activestreams_streams .as-server,
-    #activestreams_streams .as-name,
-    #activestreams_streams .as-device,
-    #activestreams_streams .as-user,
-    #activestreams_streams .as-time,
-    .as-header-row .as-server,
-    .as-header-row .as-name,
-    .as-header-row .as-device,
-    .as-header-row .as-user,
-    .as-header-row .as-time {
-        width: auto;
-        min-width: 0;
-        padding: 0;
+    .as-row {
+        border-bottom: 1px solid rgba(255,255,255,0.05);
+        padding: 6px 0;
         overflow: hidden;
+    }
+    .as-row:last-child { border-bottom: none; }
+    .as-transcode { font-size: 10px; opacity: 0.7; margin-right: 4px; }
+
+    .as-server {
+        width: 20px;
+        flex: 0 0 20px;
+    }
+
+    .as-name {
+        flex: 3 1 0;
+        width: 0;
+        min-width: 0;
+        padding-right: 10px;
+        /* Allow 2-line wrap with ellipsis */
+        display: -webkit-box;
+        -webkit-line-clamp: 2;
+        -webkit-box-orient: vertical;
+        overflow: hidden;
+        white-space: normal;
+        word-break: break-word;
+        line-height: 1.3;
+        max-height: 2.6em;
+    }
+
+    .as-device {
+        flex: 1.5 1 0;
+        width: 0;
+        min-width: 0;
+        text-align: center;
         white-space: nowrap;
+        overflow: hidden;
         text-overflow: ellipsis;
     }
 
-    /* === INDIVIDUAL COLUMN STYLES === */
-    #activestreams_streams .as-server,
-    .as-header-row .as-server {
+    .as-user {
+        flex: 1 1 0;
+        width: 0;
+        min-width: 0;
         text-align: center;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
     }
 
-    #activestreams_streams .as-name,
-    .as-header-row .as-name {
-        padding-right: var(--as-gap);
-    }
-
-    #activestreams_streams .as-device,
-    .as-header-row .as-device,
-    #activestreams_streams .as-user,
-    .as-header-row .as-user {
-        text-align: center;
-    }
-
-    #activestreams_streams .as-time,
-    .as-header-row .as-time {
-        text-align: center;
+    .as-time {
+        flex: 0 0 190px;
+        min-width: 190px;
+        text-align: right;
         font-family: monospace;
-        font-size: var(--as-font-size-time);
-    }
-
-    /* === HEADER ROW === */
-    .as-header-row {
-        /* opacity: var(--as-opacity-muted); 
-        font-size: var(--as-font-size-header); */
-        text-transform: uppercase;
-        padding-bottom: var(--as-padding-header);
-        border-bottom: none;
-        margin-bottom: var(--as-padding-header);
-    }
-
-    .as-header-row .as-server {
-        visibility: hidden;
-    }
-
-    /* === LOADING STATE === */
-    .as-loading-message {
-        font-style: italic;
-        text-align: center;
-        padding-top: var(--as-padding-mobile);
-    }
-
-    /* === MOBILE (Max Width 600px) === */
-    @media only screen and (max-width: 600px) {
-        #activestreams_streams .as-row,
-        #activestreams_streams .as-header-row,
-        .as-header-row {
-            grid-template-columns: minmax(0, 1fr) auto;
-        }
-
-        #activestreams_streams .as-server,
-        #activestreams_streams .as-device,
-        #activestreams_streams .as-user,
-        .as-header-row .as-server,
-        .as-header-row .as-device,
-        .as-header-row .as-user {
-            display: none;
-        }
-
-        #activestreams_streams .as-name,
-        .as-header-row .as-name {
-            padding-right: var(--as-padding-mobile);
-        }
-
-        #activestreams_streams .as-time,
-        .as-header-row .as-time {
-            padding-left: var(--as-padding-mobile);
-        }
-    }
-
-    <?php if ($enable_text_scroll): ?>
-    /* === TEXT SCROLLING ON HOVER === */
-    @keyframes as-text-scroll {
-        0%, 10% { transform: translateX(0); }
-        90%, 100% { transform: translateX(var(--scroll-distance, -50%)); }
-    }
-
-    #activestreams_streams .as-scrollable {
-        position: relative;
-    }
-
-    #activestreams_streams .as-scrollable .as-scroll-inner {
-        display: inline-block;
+        font-size: 12px;
         white-space: nowrap;
     }
 
-    #activestreams_streams .as-scrollable:hover .as-scroll-inner.as-overflowing {
-    animation: as-text-scroll var(--scroll-duration, 4s) linear infinite; 
-    animation-delay: 0.3s;
+    .as-header-row {
+        opacity: 0.6;
+        font-size: 11px;
+        text-transform: uppercase;
+        padding-bottom: 5px;
+        border-bottom: 1px solid rgba(255,255,255,0.1);
+        margin-bottom: 5px;
     }
 
-    /* Fade effect on edges for scrolling text 
-    #activestreams_streams .as-scrollable.as-has-overflow::after {
-        content: '';
-        position: absolute;
-        right: 0;
-        top: 0;
-        bottom: 0;
-        width: 10px;
-        background: linear-gradient(to right, transparent, var(--background-color, #1c1b1b));
-        pointer-events: none;
-    } */
-    <?php endif; ?>
+    .as-header-row .as-server { visibility: hidden; }
+
+    /* Header row name stays single line */
+    .as-header-row .as-name {
+        display: block;
+        -webkit-line-clamp: unset;
+        white-space: nowrap;
+        max-height: none;
+    }
+
+    /* --- NARROW WIDGET: Hide device column --- */
+    @media only screen and (max-width: 600px) {
+        .as-device {
+            display: none !important;
+        }
+
+        .as-name {
+            flex: 2 1 0;
+        }
+
+        .as-user {
+            flex: 1 1 0;
+        }
+
+        .as-time {
+            flex: 0 0 190px;
+            min-width: 190px;
+        }
+    }
+
+    /* --- VERY NARROW (mobile): Hide device and user --- */
+    @media only screen and (max-width: 450px) {
+        .as-device, .as-user {
+            display: none !important;
+        }
+
+        .as-name {
+            flex: 1 1 0;
+        }
+
+        .as-time {
+            flex: 0 0 190px;
+            min-width: 190px;
+        }
+    }
 </style>
 
 <?php
@@ -276,7 +194,7 @@ $mytiles[$plugin]['column1'] = <<<EOT
     <td>
         <div id="activestreams_streams">
             <div id="as_retrieving">
-                <p class="as-loading-message">_(Retrieving Data...)_</p>
+                <p align="center" style="font-style:italic;text-align:center;padding-top:10px;">_(Retrieving Data...)_</p>
             </div>
         </div>
     </td>
@@ -284,7 +202,6 @@ $mytiles[$plugin]['column1'] = <<<EOT
 </tbody>
 EOT;
 
-// COMPATIBILITY BLOCK FOR UNRAID 7.2+
 $isResponsiveWebgui = version_compare(parse_ini_file('/etc/unraid-version')['version'] ?? "", '7.2', '>=');
 if ( ! $isResponsiveWebgui) {
     $mytiles[$plugin]["column1"] .= <<<EOT
@@ -302,66 +219,21 @@ EOT;
 
 <script>
     var asPollInterval = <?=$poll_interval;?>;
-    var asEnableTextScroll = <?=$enable_text_scroll ? 'true' : 'false';?>;
-
-    function setupTextScrolling() {
-        if (!asEnableTextScroll) return;
-
-        // Target columns that may overflow: name, device, user
-        $('#activestreams_streams .as-name, #activestreams_streams .as-device, #activestreams_streams .as-user').each(function() {
-            var $el = $(this);
-
-            // Skip if already processed or is header
-            if ($el.hasClass('as-scrollable') || $el.closest('.as-header-row').length) return;
-
-            var content = $el.html();
-            var title = $el.attr('title') || $el.text();
-
-            // Wrap content in inner span for scrolling
-            $el.addClass('as-scrollable');
-            $el.html('<span class="as-scroll-inner">' + content + '</span>');
-            $el.attr('title', title);
-
-            // Check if text overflows after DOM update
-            setTimeout(function() {
-                var $inner = $el.find('.as-scroll-inner');
-                var containerWidth = $el.width();
-                var textWidth = $inner[0].scrollWidth;
-
-                if (textWidth > containerWidth) {
-                    $el.addClass('as-has-overflow');
-                    $inner.addClass('as-overflowing');
-                    var overflowAmount = textWidth - containerWidth + 20;
-                    var scrollDistance = -overflowAmount;
-                    $inner[0].style.setProperty('--scroll-distance', scrollDistance + 'px');
-                    var pixelsPerSecond = 50; 
-                    var movementTime = overflowAmount / pixelsPerSecond;
-                    var totalDuration = movementTime / 0.8;
-                    $inner[0].style.setProperty('--scroll-duration', totalDuration + 's');
-                }
-            }, 10);
-        });
-    }
-
+    
     function updateActiveStreamsDashboard() {
-        if (asEnableTextScroll && $("#activestreams_streams").is(":hover")) {
-            return;
-        }
-
         $.get("/plugins/activestreams/activestreams_api.php", function(data) {
             if (data) {
+                // 1. Update list
                 $("#activestreams_streams").html(data);
-
+                
+                // 2. Update count
                 var count = $("#activestreams_streams .as-row").length;
-                if(data.indexOf("No active streams") !== -1 ||
+                if(data.indexOf("No active streams") !== -1 || 
                    data.indexOf("No servers configured") !== -1 ||
-                   data.indexOf("Connection failed") !== -1) {
-                    count = 0;
+                   data.indexOf("Connection failed") !== -1) { 
+                    count = 0; 
                 }
-
                 $("#activestreams_count").text(count);
-
-                setupTextScrolling();
             }
         });
     }
