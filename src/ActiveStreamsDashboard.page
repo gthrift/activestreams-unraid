@@ -13,8 +13,21 @@ Icon="streams.png"
 <style>
     .as-icon-img { width: 32px; height: 32px; }
 
+    /* Constrain the table structure to prevent widget expansion */
+    tbody[title="<?=$widget_title?>"] {
+        table-layout: fixed;
+        width: 100%;
+    }
+
+    tbody[title="<?=$widget_title?>"] td {
+        width: 100%;
+        max-width: 0;
+        overflow: hidden;
+    }
+
     /* Prevent widget from growing with long titles */
-    #activestreams_streams {
+    #activestreams_streams,
+    .as-header-row {
         width: 100%;
         max-width: 100%;
         overflow: hidden;
@@ -30,6 +43,7 @@ Icon="streams.png"
     .as-row {
         border-bottom: 1px solid rgba(255,255,255,0.05);
         padding: 6px 0;
+        overflow: hidden;
     }
     .as-row:last-child { border-bottom: none; }
     .as-transcode { font-size: 10px; opacity: 0.7; margin-right: 4px; }
@@ -41,6 +55,7 @@ Icon="streams.png"
 
     .as-name {
         flex: 3 1 0;
+        width: 0;
         min-width: 0;
         padding-right: 10px;
         /* Allow 2-line wrap with ellipsis */
@@ -57,6 +72,7 @@ Icon="streams.png"
 
     .as-device {
         flex: 1.5 1 0;
+        width: 0;
         min-width: 0;
         text-align: center;
         white-space: nowrap;
@@ -66,6 +82,7 @@ Icon="streams.png"
 
     .as-user {
         flex: 1 1 0;
+        width: 0;
         min-width: 0;
         text-align: center;
         white-space: nowrap;
