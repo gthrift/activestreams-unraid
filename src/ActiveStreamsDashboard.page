@@ -63,7 +63,7 @@ Icon="streams.png"
    .as-server .jellyfin, 
    .as-server .fa-jellyfin,
    .jellyfin {
-       color: #aa5cc3; 
+       color: #aa5cc3; /* Default Jellyfin Purple */
    }
 
    .as-name {
@@ -75,19 +75,12 @@ Icon="streams.png"
        min-width: 0;
    }
    
-   .as-device {
-       color: var(--text-muted, #888);
-       font-size: 0.85em;
-       white-space: nowrap;
-       overflow: hidden;
-       text-overflow: ellipsis;
-       visibility: hidden; 
-   }
-
+   .as-device,
    .as-user {
        color: var(--text-muted, #888);
        font-size: 0.85em;
        white-space: nowrap;
+       overflow: hidden;
        text-overflow: ellipsis;
        visibility: hidden; 
    }
@@ -125,6 +118,14 @@ Icon="streams.png"
    /* ---------------------------------------------------------
       CONTAINER QUERIES (Responsive Logic)
    --------------------------------------------------------- */
+   
+   /* NARROW (<450px): Shrink Time column to save Title space */
+   @container as-widget (max-width: 450px) {
+       .as-header-row,
+       .as-row {
+           grid-template-columns: 24px 1fr 0px 0px 100px;
+       }
+   }
    
    /* MEDIUM (>400px): Show User */
    @container as-widget (min-width: 400px) {
