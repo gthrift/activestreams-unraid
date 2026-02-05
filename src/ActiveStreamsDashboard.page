@@ -16,6 +16,11 @@ Icon="streams.png"
 ?>
 
 <style>
+    /* Prevent table cell from exceeding container */
+    tbody[title="<?=$widget_title?>"] td {
+        overflow: hidden;
+    }
+
     /* Container - fill column, never exceed it */
     #activestreams_streams {
         overflow: hidden;
@@ -74,6 +79,18 @@ Icon="streams.png"
         font-style: italic;
         text-align: center;
         padding: 8px 0;
+    }
+
+    /* Narrow widths: drop device + user, keep name + progress readable */
+    @media (max-width: 768px) {
+        .as-server, .as-device, .as-user,
+        .as-header-row .as-server,
+        .as-header-row .as-device,
+        .as-header-row .as-user {
+            display: none;
+        }
+        .as-name { flex: 1; }
+        .as-time { flex: 0 0 auto; }
     }
 
     <?php if ($enable_text_scroll): ?>
