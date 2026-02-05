@@ -24,15 +24,7 @@ Icon="streams.png"
        container-type: inline-size;
        container-name: as-widget;
    }
-   
-   /* ---------------------------------------------------------
-      GRID LAYOUT
-      1. Server Dot (24px)
-      2. Name (1fr)
-      3. Device (Hidden/0px)
-      4. User (Hidden/0px)
-      5. Time/Status (190px)
-   --------------------------------------------------------- */
+
    .as-header-row,
    .as-row {
        display: grid; 
@@ -48,9 +40,7 @@ Icon="streams.png"
        border-bottom: none;
    }
    
-   /* ---------------------------------------------------------
-      SERVER DOT COLUMN (The colored indicator)
-   --------------------------------------------------------- */
+
    .as-server {
        display: flex;
        justify-content: center;
@@ -58,34 +48,24 @@ Icon="streams.png"
        font-size: 10px; /* Adjust dot size if it uses FontAwesome */
    }
    
-   /* --- SERVER BRAND COLORS --- */
-   /* These assume your PHP adds classes like 'plex', 'emby', or 'jellyfin' 
-      to the icon or span inside .as-server */
-   
-   /* Plex (Orange) */
    .as-server .plex, 
    .as-server .fa-plex,
    .plex {
        color: #e5a00d; 
    }
    
-   /* Emby (Green) */
    .as-server .emby, 
    .as-server .fa-emby,
    .emby {
        color: #52b54b; 
    }
    
-   /* Jellyfin (Purple/Blue) */
    .as-server .jellyfin, 
    .as-server .fa-jellyfin,
    .jellyfin {
        color: #aa5cc3; /* Default Jellyfin Purple */
    }
-   
-   /* ---------------------------------------------------------
-      DATA COLUMNS
-   --------------------------------------------------------- */
+
    .as-name {
        font-weight: 600;
        font-size: 0.95rem;
@@ -125,17 +105,12 @@ Icon="streams.png"
       HEADER ROW
    --------------------------------------------------------- */
    .as-header-row {
-       background-color: var(--table-header-bg, rgba(0,0,0,0.03));
        height: 32px;
-       font-size: 0.75rem;
-       font-weight: 700;
        text-transform: uppercase;
-       color: var(--header-text-color, #666);
    }
    
    /* Dark Theme Header Fix */
    body.skin-black .as-header-row {
-       background-color: rgba(255, 255, 255, 0.1);
        color: #fff;
        opacity: 0.9;
    }
