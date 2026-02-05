@@ -16,193 +16,68 @@ Icon="streams.png"
 ?>
 
 <style>
-    /* === CSS CUSTOM PROPERTIES === */
-    :root {
-        /* Spacing */
-        --as-gap: 5px;
-        --as-padding-row: 6px;
-        --as-padding-header: 5px;
-        --as-padding-mobile: 10px;
-
-        /* Typography */
-        --as-font-size-header: 11px;
-        --as-font-size-time: 12px;
-        --as-font-size-transcode: 10px;
-
-        /* Colors - neutral defaults that work on most themes */
-        --as-border-subtle: rgba(128, 128, 128, 0.15);
-        --as-border-row: rgba(128, 128, 128, 0.1);
-        --as-opacity-muted: 0.6;
-        --as-opacity-transcode: 0.7;
-
-        /* Icon */
-        --as-icon-size: 32px;
-    }
-
-    /* Theme: Dark (black, dark) */
-    .Theme--black:root,
-    .Theme--dark:root {
-        --as-border-subtle: rgba(255, 255, 255, 0.1);
-        --as-border-row: rgba(255, 255, 255, 0.05);
-    }
-
-    /* Theme: Light (white, azure, gray) */
-    .Theme--white:root,
-    .Theme--azure:root,
-    .Theme--gray:root {
-        --as-border-subtle: rgba(0, 0, 0, 0.12);
-        --as-border-row: rgba(0, 0, 0, 0.06);
-    }
-
-    /* === CONTAINER CONSTRAINTS === */
-    tbody[title="<?=$widget_title?>"] {
-        table-layout: fixed;
-        width: 100%;
-    }
-
-    tbody[title="<?=$widget_title?>"] td {
-        max-width: 100%;
-        overflow: hidden;
-    }
-
+    /* Container - fill column, never exceed it */
     #activestreams_streams {
-        max-width: 100%;
         overflow: hidden;
+        width: 100%;
         box-sizing: border-box;
     }
 
-    /* === ICON === */
-    .as-icon-img {
-        width: var(--as-icon-size);
-        height: var(--as-icon-size);
-    }
+    .as-icon-img { width: 32px; height: 32px; }
 
-    /* === GRID LAYOUT === */
-    #activestreams_streams .as-row,
-    #activestreams_streams .as-header-row,
-    .as-header-row {
-        display: grid;
-        grid-template-columns: 20px minmax(0, 3.5fr) minmax(0, 2fr) minmax(0, 1.5fr) minmax(0, 2.5fr);
+    /* Row layout - flexbox adapts to any width */
+    .as-row, .as-header-row {
+        display: flex;
         align-items: center;
         width: 100%;
-        max-width: 100%;
-        min-width: 0;
-        overflow: hidden;
         box-sizing: border-box;
-        gap: var(--as-gap);
+        overflow: hidden;
+        gap: 4px;
     }
 
-    #activestreams_streams .as-row {
-        border-bottom: none;
-        padding: var(--as-padding-row) 0;
+    .as-row {
+        padding: 4px 0;
+        border-bottom: 1px solid rgba(128,128,128,0.08);
     }
+    .as-row:last-child { border-bottom: none; }
 
-    #activestreams_streams .as-row:last-child {
-        border-bottom: none;
-    }
-
-    /* === TRANSCODE INDICATOR === */
-    #activestreams_streams .as-transcode {
-        font-size: var(--as-font-size-transcode);
-        opacity: var(--as-opacity-transcode);
-        margin-right: 4px;
-    }
-
-    /* === COLUMN BASE STYLES === */
-    #activestreams_streams .as-server,
-    #activestreams_streams .as-name,
-    #activestreams_streams .as-device,
-    #activestreams_streams .as-user,
-    #activestreams_streams .as-time,
-    .as-header-row .as-server,
-    .as-header-row .as-name,
-    .as-header-row .as-device,
-    .as-header-row .as-user,
-    .as-header-row .as-time {
-        width: auto;
+    /* All columns: truncate with ellipsis, never wrap */
+    .as-server, .as-name, .as-device, .as-user, .as-time {
         min-width: 0;
-        padding: 0;
         overflow: hidden;
         white-space: nowrap;
         text-overflow: ellipsis;
     }
 
-    /* === INDIVIDUAL COLUMN STYLES === */
-    #activestreams_streams .as-server,
-    .as-header-row .as-server {
-        text-align: center;
-    }
+    /* Column sizing via flex ratios - no fixed widths */
+    .as-server { flex: 0 0 auto; text-align: center; }
+    .as-name   { flex: 3.5; }
+    .as-device { flex: 2; text-align: center; }
+    .as-user   { flex: 1.5; text-align: center; }
+    .as-time   { flex: 2.5; text-align: right; font-family: monospace; font-size: 0.9em; }
 
-    #activestreams_streams .as-name,
-    .as-header-row .as-name {
-        padding-right: var(--as-gap);
-    }
+    .as-transcode { font-size: 0.85em; opacity: 0.7; margin-right: 4px; }
 
-    #activestreams_streams .as-device,
-    .as-header-row .as-device,
-    #activestreams_streams .as-user,
-    .as-header-row .as-user {
-        text-align: center;
-    }
-
-    #activestreams_streams .as-time,
-    .as-header-row .as-time {
-        text-align: center;
-        font-family: monospace;
-        font-size: var(--as-font-size-time);
-    }
-
-    /* === HEADER ROW === */
+    /* Header row */
     .as-header-row {
-        /* opacity: var(--as-opacity-muted); 
-        font-size: var(--as-font-size-header); */
+        opacity: 0.6;
+        font-size: 0.9em;
         text-transform: uppercase;
-        padding-bottom: var(--as-padding-header);
-        border-bottom: none;
-        margin-bottom: var(--as-padding-header);
+        padding-bottom: 4px;
+        border-bottom: 1px solid rgba(128,128,128,0.15);
+        margin-bottom: 4px;
     }
+    .as-header-row .as-server { visibility: hidden; }
 
-    .as-header-row .as-server {
-        visibility: hidden;
-    }
-
-    /* === LOADING STATE === */
+    /* Loading state */
     .as-loading-message {
         font-style: italic;
         text-align: center;
-        padding-top: var(--as-padding-mobile);
-    }
-
-    /* === MOBILE (Max Width 600px) === */
-    @media only screen and (max-width: 600px) {
-        #activestreams_streams .as-row,
-        #activestreams_streams .as-header-row,
-        .as-header-row {
-            grid-template-columns: minmax(0, 1fr) auto;
-        }
-
-        #activestreams_streams .as-server,
-        #activestreams_streams .as-device,
-        #activestreams_streams .as-user,
-        .as-header-row .as-server,
-        .as-header-row .as-device,
-        .as-header-row .as-user {
-            display: none;
-        }
-
-        #activestreams_streams .as-name,
-        .as-header-row .as-name {
-            padding-right: var(--as-padding-mobile);
-        }
-
-        #activestreams_streams .as-time,
-        .as-header-row .as-time {
-            padding-left: var(--as-padding-mobile);
-        }
+        padding: 8px 0;
     }
 
     <?php if ($enable_text_scroll): ?>
-    /* === TEXT SCROLLING ON HOVER === */
+    /* Text scrolling on hover */
     @keyframes as-text-scroll {
         0%, 10% { transform: translateX(0); }
         90%, 100% { transform: translateX(var(--scroll-distance, -50%)); }
@@ -218,21 +93,9 @@ Icon="streams.png"
     }
 
     #activestreams_streams .as-scrollable:hover .as-scroll-inner.as-overflowing {
-    animation: as-text-scroll var(--scroll-duration, 4s) linear infinite; 
-    animation-delay: 0.3s;
+        animation: as-text-scroll var(--scroll-duration, 4s) linear infinite;
+        animation-delay: 0.3s;
     }
-
-    /* Fade effect on edges for scrolling text 
-    #activestreams_streams .as-scrollable.as-has-overflow::after {
-        content: '';
-        position: absolute;
-        right: 0;
-        top: 0;
-        bottom: 0;
-        width: 10px;
-        background: linear-gradient(to right, transparent, var(--background-color, #1c1b1b));
-        pointer-events: none;
-    } */
     <?php endif; ?>
 </style>
 
