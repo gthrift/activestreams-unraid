@@ -2,8 +2,8 @@
 <!DOCTYPE PLUGIN [
 <!ENTITY name      "activestreams">
 <!ENTITY author    "gthrift">
-<!ENTITY version   "2026.02.04-beta9">
-<!ENTITY sha256    "53be4c8ed405be39a2b788ecf6617ece50bc0b3f8b5b72787bab31cb535c95c9">
+<!ENTITY version   "2026.02.04-beta10">
+<!ENTITY sha256    "7fb2a8a4de172bd713852edae664823bf8ac4dfc21a3b9e2a4ff2080fe387f06">
 <!ENTITY launch    "Settings/ActiveStreamsSettings">
 <!ENTITY gitURL    "https://raw.githubusercontent.com/gthrift/activestreams-unraid/main">
 <!ENTITY archive   "&gitURL;/archive/&name;-&version;.txz">
@@ -24,10 +24,73 @@
         min="6.12.0">
 
 <CHANGES>
-###2026.02.04-beta9
+###2026.02.04-beta10
 - Beta build for testing
 
-###2026.02.02
+###2026.02.04-beta8
+- Beta build for testing
+
+###2026.02.04-beta4
+- Beta build for testing
+
+###2026.02.04-beta3
+- Beta build for testing
+
+###2026.02.04-beta2
+- Beta build for testing
+
+###2026.02.04-beta1
+- Beta build for testing
+
+###2026.02.03-beta7
+- Beta build for testing
+
+###2026.02.03-beta6
+- Beta build for testing
+
+###2026.02.03-beta5
+- Beta build for testing
+
+###2026.02.03-beta4
+- Beta build for testing
+
+###2026.02.03-beta3
+- Beta build for testing
+
+###2026.02.03-beta2
+- Beta build for testing
+
+###2026.02.03-beta1
+- Beta build for testing
+
+###2026.02.02-beta8
+- Beta build for testing
+
+###2026.02.02-beta7
+- Beta build for testing
+
+###2026.02.02-beta6
+- Beta build for testing
+
+###2026.02.02-beta5
+- Beta build for testing
+
+###2026.02.02-beta4
+- Beta build for testing
+
+###2026.02.02-beta3
+- Beta build for testing
+
+###2026.02.02-beta2
+- fix width
+
+###2026.02.02-beta1
+- Fix widget width
+
+###2026.02.02-beta1
+- Beta build for testing
+
+###2026.02.02-beta1
 - Beta build for testing
 - Now installs from pre-built archive (same as production)
 - Includes SHA256 verification
