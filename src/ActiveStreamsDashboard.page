@@ -15,6 +15,175 @@ Icon="streams.png"
     $icon_file = "/plugins/activestreams/{$widget_icon}.png";
 ?>
 
+<style>
+    /* === CONTAINER: Prevent spill beyond Unraid widget bounds === */
+    tbody[title="<?=$widget_title?>"] {
+        table-layout: fixed;
+        width: 100%;
+    }
+
+    tbody[title="<?=$widget_title?>"] td {
+        max-width: 100%;
+        overflow: hidden;
+        container-type: inline-size;
+        container-name: as-widget;
+    }
+
+    #activestreams_streams {
+        max-width: 100%;
+        overflow: hidden;
+        box-sizing: border-box;
+    }
+
+    /* === ICON === */
+    .as-icon-img {
+        width: 32px;
+        height: 32px;
+    }
+
+    /* === GRID LAYOUT === */
+    .as-header-row,
+    #activestreams_streams .as-row {
+        display: grid;
+        grid-template-columns: 20px minmax(0, 1fr) minmax(0, 0.6fr) minmax(0, 0.5fr) 190px;
+        align-items: center;
+        width: 100%;
+        max-width: 100%;
+        box-sizing: border-box;
+        gap: 6px;
+        min-width: 0;
+        overflow: hidden;
+    }
+
+    /* === HEADER ROW === */
+    .as-header-row {
+        opacity: 0.6;
+        font-size: 11px;
+        text-transform: uppercase;
+        padding-bottom: 5px;
+        border-bottom: 1px solid rgba(255,255,255,0.1);
+        margin-bottom: 5px;
+    }
+
+    .as-header-row .as-server {
+        visibility: hidden;
+    }
+
+    /* === DATA ROWS === */
+    #activestreams_streams .as-row {
+        border-bottom: 1px solid rgba(255,255,255,0.05);
+        padding: 6px 0;
+    }
+
+    #activestreams_streams .as-row:last-child {
+        border-bottom: none;
+    }
+
+    /* === COLUMN BASE === */
+    .as-server,
+    .as-name,
+    .as-device,
+    .as-user,
+    .as-time {
+        min-width: 0;
+        overflow: hidden;
+        white-space: nowrap;
+    }
+
+    /* === SERVER DOT === */
+    .as-server {
+        text-align: center;
+    }
+
+    /* === TITLE (scrollable when overflowing) === */
+    .as-name {
+        text-overflow: ellipsis;
+        position: relative;
+    }
+
+    .as-name .as-scroll-inner {
+        display: inline-block;
+        white-space: nowrap;
+    }
+
+    .as-name.as-overflows {
+        text-overflow: clip;
+    }
+
+    .as-name.as-overflows .as-scroll-inner {
+        animation: as-scroll var(--as-dur, 6s) ease-in-out infinite;
+    }
+
+    @keyframes as-scroll {
+        0%, 20%  { transform: translateX(0); }
+        40%, 60% { transform: translateX(var(--as-dist, -100px)); }
+        80%, 100% { transform: translateX(0); }
+    }
+
+    /* === DEVICE === */
+    .as-device {
+        text-align: center;
+        text-overflow: ellipsis;
+    }
+
+    /* === USER === */
+    .as-user {
+        text-align: center;
+        text-overflow: ellipsis;
+    }
+
+    /* === PROGRESS === */
+    .as-time {
+        text-align: center;
+        font-family: monospace;
+        font-size: 12px;
+    }
+
+    /* === TRANSCODE INDICATOR === */
+    .as-transcode {
+        font-size: 10px;
+        opacity: 0.7;
+        margin-right: 4px;
+    }
+
+    /* === RESPONSIVE: Hide device first (container queries) === */
+    @supports (container-type: inline-size) {
+        @container as-widget (max-width: 520px) {
+            .as-header-row,
+            #activestreams_streams .as-row {
+                grid-template-columns: 20px minmax(0, 1fr) minmax(0, 0.5fr) 190px;
+            }
+            .as-device { display: none; }
+        }
+
+        @container as-widget (max-width: 380px) {
+            .as-header-row,
+            #activestreams_streams .as-row {
+                grid-template-columns: 20px minmax(0, 1fr) 190px;
+            }
+            .as-user { display: none; }
+        }
+    }
+
+    /* === FALLBACK: Media queries for older browsers === */
+    @supports not (container-type: inline-size) {
+        @media only screen and (max-width: 600px) {
+            .as-header-row,
+            #activestreams_streams .as-row {
+                grid-template-columns: 20px minmax(0, 1fr) minmax(0, 0.5fr) 190px;
+            }
+            .as-device { display: none; }
+        }
+
+        @media only screen and (max-width: 450px) {
+            .as-header-row,
+            #activestreams_streams .as-row {
+                grid-template-columns: 20px minmax(0, 1fr) 190px;
+            }
+            .as-user { display: none; }
+        }
+    }
+</style>
 
 <?php
 $mytiles[$plugin]['column1'] = <<<EOT
@@ -97,6 +266,20 @@ EOT;
                     count = 0; 
                 }
                 $("#activestreams_count").text(count);
+
+                // 3. Enable scrolling for titles that overflow
+                requestAnimationFrame(function() {
+                    $('#activestreams_streams .as-name').each(function() {
+                        var el = this;
+                        if (el.scrollWidth > el.clientWidth + 2) {
+                            var overflow = el.scrollWidth - el.clientWidth;
+                            $(el).wrapInner('<span class="as-scroll-inner"></span>');
+                            $(el).addClass('as-overflows');
+                            el.style.setProperty('--as-dist', '-' + (overflow + 10) + 'px');
+                            el.style.setProperty('--as-dur', Math.max(4, Math.min(12, overflow / 20)) + 's');
+                        }
+                    });
+                });
             }
         });
     }
