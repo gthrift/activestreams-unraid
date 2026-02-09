@@ -13,13 +13,13 @@ IconFA="film"
 
 <style>
     .as-section { 
-        margin-bottom: 30px; 
+        margin-bottom: 30px;
         padding: 20px; 
         background: rgba(128,128,128,0.1); 
         border-radius: 8px; 
     }
     .as-section h3 { 
-        margin-top: 0; 
+        margin-top: 0;
         border-bottom: 1px solid rgba(128,128,128,0.2); 
         padding-bottom: 10px; 
     }
@@ -28,7 +28,7 @@ IconFA="film"
     .as-server-list { margin: 15px 0; }
     .as-server-item { 
         display: flex; 
-        align-items: center; 
+        align-items: center;
         padding: 10px 15px; 
         margin: 5px 0; 
         background: rgba(128,128,128,0.1); 
@@ -37,7 +37,7 @@ IconFA="film"
     }
     .as-server-item .server-type { 
         font-weight: bold; 
-        width: 80px; 
+        width: 80px;
         text-transform: capitalize;
     }
     .as-server-item .server-name { flex: 1; }
@@ -45,14 +45,14 @@ IconFA="film"
     .as-server-item .server-actions { display: flex; gap: 10px; }
     
     .as-btn { 
-        padding: 8px 16px; 
+        padding: 8px 16px;
         cursor: pointer; 
         border-radius: 4px;
         border: 1px solid;
         font-weight: normal;
     }
     .as-btn-primary { 
-        background: #ff9800; 
+        background: #ff9800;
         color: #000; 
         border-color: #ff9800;
     }
@@ -78,7 +78,7 @@ IconFA="film"
 
     /* Server Config Pop-up */
     .as-modal { 
-        display: none; 
+        display: none;
         position: fixed; 
         top: 0; 
         left: 0; 
@@ -86,12 +86,12 @@ IconFA="film"
         height: 100%; 
         background: rgba(0,0,0,0.7); 
         z-index: 1000; 
-        overflow-y: auto; 
+        overflow-y: auto;
     }
 
     .as-modal-content { 
         position: relative; 
-        margin: 50px auto; 
+        margin: 50px auto;
         top: auto;
         left: auto;
         transform: none;
@@ -118,7 +118,7 @@ IconFA="film"
     .as-form-row { margin: 18px 0; }
     .as-form-row > label { 
         display: block; 
-        margin-bottom: 8px; 
+        margin-bottom: 8px;
         font-weight: bold; 
         font-size: 14px;
     }
@@ -127,7 +127,7 @@ IconFA="film"
     .as-modal-content input[type="number"],
     .as-modal-content input[type="password"],
     .as-modal-content select {
-        width: 100%; 
+        width: 100%;
         padding: 8px 10px; 
         box-sizing: border-box;
         font-size: 14px;
@@ -140,7 +140,7 @@ IconFA="film"
     }
     
     .as-form-row .hint { 
-        font-size: 12px; 
+        font-size: 12px;
         opacity: 0.6;
         margin-top: 6px;
         line-height: 1.4;
@@ -152,26 +152,26 @@ IconFA="film"
     
     /* Test Result Box */
     .as-test-result { 
-        margin-top: 15px; 
+        margin-top: 15px;
         padding: 12px 15px; 
         border-radius: 4px; 
         display: none;
         font-size: 14px;
     }
     .as-test-success { 
-        background: rgba(82, 181, 75, 0.2); 
+        background: rgba(82, 181, 75, 0.2);
         color: #5cb85c;
         border: 1px solid rgba(82, 181, 75, 0.4);
     }
     .as-test-error { 
-        background: rgba(217, 83, 79, 0.2); 
+        background: rgba(217, 83, 79, 0.2);
         color: #d9534f;
         border: 1px solid rgba(217, 83, 79, 0.4);
     }
     
     /* Button Row */
     .as-modal-buttons {
-        display: flex; 
+        display: flex;
         gap: 10px; 
         margin-top: 25px;
         padding-top: 20px;
@@ -209,13 +209,13 @@ $cfg['POLL_INTERVAL'] = $cfg['POLL_INTERVAL'] ?? "5";
 $cfg['WIDGET_ICON'] = $cfg['WIDGET_ICON'] ?? "streams";
 $cfg['WIDGET_TITLE'] = $cfg['WIDGET_TITLE'] ?? "Active Streams";
 $cfg['SHOW_EPISODE_NUMBERS'] = $cfg['SHOW_EPISODE_NUMBERS'] ?? "0";
+$cfg['SCROLL_LONG_NAMES'] = $cfg['SCROLL_LONG_NAMES'] ?? "0";
 
 // Load servers
 $servers = file_exists($servers_file) ? json_decode(file_get_contents($servers_file), true) : [];
 if (!is_array($servers)) $servers = [];
 ?>
 
-<!-- General Settings Section -->
 <div class="as-section">
     <h3><i class="fa fa-cog"></i> _(General Settings)_</h3>
     <form name="activestreams_settings" id="activestreams_settings" method="POST" action="/update.php" target="progressFrame">
@@ -244,7 +244,17 @@ if (!is_array($servers)) $servers = [];
         
         <div class="as-form-row">
             <label>_(Refresh Interval)_:</label>
-            <input type="number" name="POLL_INTERVAL" value="<?php echo($cfg['POLL_INTERVAL']); ?>" min="1" max="60" style="width: 80px;"> _(seconds)_
+            <input type="number" name="POLL_INTERVAL" value="<?php echo($cfg['POLL_INTERVAL']); ?>" min="5" max="60" style="width: 80px;"> _(seconds)_
+            <div class="hint" style="margin-top: 5px;">_(Minimum 5 seconds. Hovering over the widget will pause the refresh.)_</div>
+        </div>
+
+        <div class="as-form-row">
+            <label style="display: flex; align-items: center; cursor: pointer; font-weight: normal;">
+                <input type="hidden" name="SCROLL_LONG_NAMES" value="0">
+                <input type="checkbox" name="SCROLL_LONG_NAMES" value="1" <?php echo($cfg['SCROLL_LONG_NAMES'] === '1' ? 'checked' : ''); ?> style="margin-right: 8px;">
+                _(Enable Scrolling Text)_
+            </label>
+            <div class="hint" style="margin-left: 0; margin-top: 5px;">_(Scroll long stream names when hovering over them.)_</div>
         </div>
 
         <div class="as-form-row">
@@ -260,7 +270,6 @@ if (!is_array($servers)) $servers = [];
     </form>
 </div>
 
-<!-- Server Management Section -->
 <div class="as-section">
     <h3><i class="fa fa-server"></i> _(Media Servers)_</h3>
     <p>_(Configure your Plex, Emby, and Jellyfin servers below.)_</p>
@@ -293,7 +302,6 @@ if (!is_array($servers)) $servers = [];
     </button>
 </div>
 
-<!-- Add/Edit Server Modal -->
 <div class="as-modal" id="serverModal">
     <div class="as-modal-content">
         <h3 id="modalTitle"><i class="fa fa-server"></i> _(Add Server)_</h3>
@@ -425,6 +433,7 @@ function editServer(index) {
     $('#serverToken').val(server.token);
     $('#serverSSL').prop('checked', server.ssl === true || server.ssl === '1');
     $('#serverSSLVerify').prop('checked', server.ssl_verify === true || server.ssl_verify === '1');
+    
     // Show SSL verify option if SSL is enabled
     if (server.ssl === true || server.ssl === '1') {
         $('#sslVerifyRow').show();
