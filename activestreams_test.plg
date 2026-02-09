@@ -2,8 +2,8 @@
 <!DOCTYPE PLUGIN [
 <!ENTITY name      "activestreams">
 <!ENTITY author    "gthrift">
-<!ENTITY version   "2026.02.08-beta7.4">
-<!ENTITY sha256    "4b1f6d7a03ffb297dbad96374c170b3742a1342f8336aa35f28c46ab9975623f">
+<!ENTITY version   "2026.02.08-beta7.5">
+<!ENTITY sha256    "cb45bde40aefd7837c5ca4987b4cca4ea182cc6ac0b9bc4c615391d976c8c81d">
 <!ENTITY launch    "Settings/ActiveStreamsSettings">
 <!ENTITY gitURL    "https://raw.githubusercontent.com/gthrift/activestreams-unraid/main">
 <!ENTITY archive   "&gitURL;/archive/&name;-&version;.txz">
@@ -24,6 +24,9 @@
         min="6.12.0">
 
 <CHANGES>
+###2026.02.08-beta7.5
+- Beta build for testing
+
 ###2026.02.08-beta7.4
 - Beta build for testing
 
