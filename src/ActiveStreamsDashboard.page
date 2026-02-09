@@ -4,9 +4,11 @@ Icon="streams.png"
 <?php
     $plugin = "activestreams";
     $cfg = parse_ini_file("/boot/config/plugins/activestreams/activestreams.cfg");
-    $poll_interval = isset($cfg['POLL_INTERVAL']) ? (int)$cfg['POLL_INTERVAL'] * 1000 : 5000;
+    // Ensure minimum poll interval of 5000ms
+    $poll_interval = isset($cfg['POLL_INTERVAL']) ? max((int)$cfg['POLL_INTERVAL'], 5) * 1000 : 5000;
     $widget_icon = $cfg['WIDGET_ICON'] ?? 'streams';
     $widget_title = $cfg['WIDGET_TITLE'] ?? 'Active Streams';
+    $scroll_names = isset($cfg['SCROLL_LONG_NAMES']) && $cfg['SCROLL_LONG_NAMES'] === '1';
     $icon_file = "/plugins/activestreams/{$widget_icon}.png";
 ?>
 
@@ -53,24 +55,22 @@ Icon="streams.png"
         flex: 0 0 20px;
     }
 
+    /* Name takes remaining space, single line */
     .as-name {
-        flex: 3 1 0;
+        flex: 1 1 auto;
         width: 0;
         min-width: 0;
         padding-right: 10px;
-        /* Allow 2-line wrap with ellipsis */
-        display: -webkit-box;
-        -webkit-line-clamp: 2;
-        -webkit-box-orient: vertical;
+        white-space: nowrap;
         overflow: hidden;
-        white-space: normal;
-        word-break: break-word;
+        text-overflow: ellipsis;
         line-height: 1.3;
-        max-height: 2.6em;
+        position: relative; /* For scroll animation context if needed */
     }
 
+    /* Device priority low */
     .as-device {
-        flex: 1.5 1 0;
+        flex: 0 1 120px;
         width: 0;
         min-width: 0;
         text-align: center;
@@ -79,8 +79,9 @@ Icon="streams.png"
         text-overflow: ellipsis;
     }
 
+    /* User priority medium */
     .as-user {
-        flex: 1 1 0;
+        flex: 0 1 100px;
         width: 0;
         min-width: 0;
         text-align: center;
@@ -89,13 +90,15 @@ Icon="streams.png"
         text-overflow: ellipsis;
     }
 
+    /* Time gets priority, fixed width, never shrinks */
     .as-time {
-        flex: 0 0 190px;
-        min-width: 190px;
+        flex: 0 0 160px;
+        min-width: 160px;
         text-align: right;
         font-family: monospace;
         font-size: 12px;
         white-space: nowrap;
+        overflow: hidden;
     }
 
     .as-header-row {
@@ -109,48 +112,19 @@ Icon="streams.png"
 
     .as-header-row .as-server { visibility: hidden; }
 
-    /* Header row name stays single line */
     .as-header-row .as-name {
         display: block;
-        -webkit-line-clamp: unset;
         white-space: nowrap;
-        max-height: none;
     }
 
     /* --- NARROW WIDGET: Hide device column --- */
     @media only screen and (max-width: 600px) {
-        .as-device {
-            display: none !important;
-        }
-
-        .as-name {
-            flex: 2 1 0;
-        }
-
-        .as-user {
-            flex: 1 1 0;
-        }
-
-        .as-time {
-            flex: 0 0 190px;
-            min-width: 190px;
-        }
+        .as-device { display: none !important; }
     }
 
     /* --- VERY NARROW (mobile): Hide device and user --- */
     @media only screen and (max-width: 450px) {
-        .as-device, .as-user {
-            display: none !important;
-        }
-
-        .as-name {
-            flex: 1 1 0;
-        }
-
-        .as-time {
-            flex: 0 0 190px;
-            min-width: 190px;
-        }
+        .as-device, .as-user { display: none !important; }
     }
 </style>
 
@@ -166,7 +140,7 @@ $mytiles[$plugin]['column1'] = <<<EOT
             <h3 class='tile-header-main' id='{$plugin}-dashboard-title'>
               {$widget_title}
             </h3>
-            <span id="as_count_container"><span id="activestreams_count">0</span> _(Active Stream(s))_</span>
+             <span id="as_count_container"><span id="activestreams_count">0</span> _(Active Stream(s))_</span>
           </div>
         </div>
         <div class='tile-header-right'>
@@ -219,8 +193,13 @@ EOT;
 
 <script>
     var asPollInterval = <?=$poll_interval;?>;
+    var asScrollEnabled = <?= $scroll_names ? 'true' : 'false'; ?>;
+    var asIsHovering = false;
     
     function updateActiveStreamsDashboard() {
+        // Pause update if hovering to read text
+        if (asIsHovering) return;
+
         $.get("/plugins/activestreams/activestreams_api.php", function(data) {
             if (data) {
                 // 1. Update list
@@ -231,7 +210,7 @@ EOT;
                 if(data.indexOf("No active streams") !== -1 || 
                    data.indexOf("No servers configured") !== -1 ||
                    data.indexOf("Connection failed") !== -1) { 
-                    count = 0; 
+                   count = 0; 
                 }
                 $("#activestreams_count").text(count);
             }
@@ -239,6 +218,35 @@ EOT;
     }
 
     $(function() {
+        // Track hover state on the widget container
+        $("#activestreams_streams").hover(
+            function() { asIsHovering = true; },
+            function() { asIsHovering = false; }
+        );
+
+        // Name Scrolling Logic
+        $(document).on('mouseenter', '.as-name', function() {
+            if (!asScrollEnabled) return;
+            var $el = $(this);
+            var scrollW = $el[0].scrollWidth;
+            var clientW = $el[0].clientWidth;
+            var delta = scrollW - clientW;
+
+            if (delta > 0) {
+                // Speed: ~30px per second. Duration min 2 seconds.
+                var speed = 30; 
+                var duration = (delta / speed) * 1000;
+                if (duration < 2000) duration = 2000;
+
+                // Animate scrollLeft
+                $el.stop(true, false).animate({ scrollLeft: delta + 5 }, duration, 'linear');
+            }
+        }).on('mouseleave', '.as-name', function() {
+            if (!asScrollEnabled) return;
+            // Snap back quickly
+            $(this).stop(true, false).animate({ scrollLeft: 0 }, 500);
+        });
+
         updateActiveStreamsDashboard();
         setInterval(updateActiveStreamsDashboard, asPollInterval);
     });
