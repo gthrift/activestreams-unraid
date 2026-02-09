@@ -2,8 +2,8 @@
 <!DOCTYPE PLUGIN [
 <!ENTITY name      "activestreams">
 <!ENTITY author    "gthrift">
-<!ENTITY version   "2026.02.08-beta2">
-<!ENTITY sha256    "5c54ff6cae7d763e88098f247aa112ba9df8d82ece22732f4ba221c7dc89c508">
+<!ENTITY version   "2026.02.08-beta2.1">
+<!ENTITY sha256    "36b04cc1a937ce690fc9cfd059d4380668ad8a65995ca1271f54c38ebb6375d5">
 <!ENTITY launch    "Settings/ActiveStreamsSettings">
 <!ENTITY gitURL    "https://raw.githubusercontent.com/gthrift/activestreams-unraid/main">
 <!ENTITY archive   "&gitURL;/archive/&name;-&version;.txz">
@@ -24,6 +24,9 @@
         min="6.12.0">
 
 <CHANGES>
+###2026.02.08-beta2.1
+- Re-implement scroll on mouseover
+
 ###2026.02.08-beta2
 - Re-implement scroll on hover
 
