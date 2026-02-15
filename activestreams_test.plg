@@ -2,9 +2,9 @@
 <!DOCTYPE PLUGIN [
 <!ENTITY name      "activestreams">
 <!ENTITY author    "gthrift">
-<!ENTITY version   "2026.02.08-beta7.6">
+<!ENTITY version   "2026.02.05-beta1">
 <!ENTITY launch    "Settings/ActiveStreamsSettings">
-<!ENTITY branch    "main">
+<!ENTITY branch    "2025.02.05">
 <!ENTITY gitURL    "https://raw.githubusercontent.com/gthrift/activestreams-unraid/&branch;">
 <!ENTITY emhttp    "/usr/local/emhttp/plugins/&name;">
 <!ENTITY plgPATH   "/boot/config/plugins/&name;">
@@ -23,39 +23,9 @@
         min="6.12.0">
 
 <CHANGES>
-###2026.02.08-beta7.6
-- Switched to direct file install from GitHub (no .txz package needed)
-- Files pulled directly from src/ and metadata/ on configured branch
-
-###2026.02.08-beta7.4
-- Beta build for testing
-
-###2026.02.08-beta7.2
-- Beta build for testing
-
-###2026.02.08-beta7.1
-- Beta build for testing
-
-###2026.02.08-beta7
-- Beta build for testing
-
-###2026.02.08-beta6
-- Beta build for testing
-
-###2026.02.08-beta5
-- Beta build for testing
-
-###2026.02.08-beta3
-- Beta build for testing
-
-###2026.02.08-beta2.1
-- Re-implement scroll on mouseover
-
-###2026.02.08-beta2
-- Re-implement scroll on hover
-
-###2026.02.08-beta1
-- CSS Improvements
+###2026.02.05-beta1
+- improved transcoding detail
+- Hide transcoding when Plex stream is "direct play"
 
 ###2026.02.04
 - Fixed CSS... maybe
