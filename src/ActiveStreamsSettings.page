@@ -451,7 +451,9 @@ function deleteServer(index) {
             } else {
                 alert('_(Error deleting server)_: ' + response.error);
             }
-        }, 'json');
+        }, 'json').fail(function(jqXHR) {
+            alert('_(Error deleting server)_: Request failed (HTTP ' + jqXHR.status + '). Check your server configuration.');
+        });
     }
 }
 
@@ -507,7 +509,9 @@ $('#serverForm').on('submit', function(e) {
         } else {
             alert('_(Error saving server)_: ' + response.error);
         }
-    }, 'json');
+    }, 'json').fail(function(jqXHR) {
+        alert('_(Error saving server)_: Request failed (HTTP ' + jqXHR.status + '). Check your server configuration.');
+    });
 });
 
 // Close modal on background click
