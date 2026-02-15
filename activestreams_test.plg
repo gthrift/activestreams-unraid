@@ -3,10 +3,9 @@
 <!ENTITY name      "activestreams">
 <!ENTITY author    "gthrift">
 <!ENTITY version   "2026.02.08-beta7.6">
-<!ENTITY sha256    "091d0c9820b3c974f2dc7d71be29fb7733f9890737a2470d0a7453722ffc8f82">
 <!ENTITY launch    "Settings/ActiveStreamsSettings">
-<!ENTITY gitURL    "https://raw.githubusercontent.com/gthrift/activestreams-unraid/main">
-<!ENTITY archive   "&gitURL;/archive/&name;-&version;.txz">
+<!ENTITY branch    "main">
+<!ENTITY gitURL    "https://raw.githubusercontent.com/gthrift/activestreams-unraid/&branch;">
 <!ENTITY emhttp    "/usr/local/emhttp/plugins/&name;">
 <!ENTITY plgPATH   "/boot/config/plugins/&name;">
 ]>
@@ -25,7 +24,8 @@
 
 <CHANGES>
 ###2026.02.08-beta7.6
-- Beta build for testing
+- Switched to direct file install from GitHub (no .txz package needed)
+- Files pulled directly from src/ and metadata/ on configured branch
 
 ###2026.02.08-beta7.4
 - Beta build for testing
@@ -85,38 +85,83 @@ BETA VERSION - For testing new features before production release.
 A plugin to create a dashboard widget that shows your active streams from Plex, Emby, and Jellyfin servers.
 
 BETA TESTING:
-1. This version installs from a pre-built archive (like production)
-2. SHA256 hash verification ensures file integrity
-3. Uninstall before installing production version
+1. This version downloads files directly from GitHub (no package build needed)
+2. Files are pulled from the branch set in the "branch" entity
+3. Change the branch entity to test different branches
+4. Uninstall before installing production version
 
-To install a specific beta branch, use this URL format:
+To install from a specific branch, change the branch entity in this .plg file,
+or use this URL format:
 https://raw.githubusercontent.com/gthrift/activestreams-unraid/BRANCH_NAME/activestreams_test.plg
 </OVERVIEW>
 
+<!-- ============================================ -->
+<!-- PRE-INSTALL: Clean old files, create dirs    -->
+<!-- ============================================ -->
 <FILE Run="/bin/bash">
         <INLINE>
                 echo "================================================"
                 echo " Installing BETA version of Active Streams"
                 echo " Version: &version;"
+                echo " Branch: &branch;"
                 echo "================================================"
 
-                # Remove old webUI files to prevent conflicts
-                rm -f "&emhttp;/*.page"
-                rm -f "&emhttp;/*.php"
+                # Uninstall any existing .txz package from a previous package-based install
+                if ls "&plgPATH;/"*.txz 1>/dev/null 2>/dev/null; then
+                    echo "Removing old package-based install..."
+                    removepkg "&plgPATH;/"*.txz 2>/dev/null
+                    rm -f "&plgPATH;/"*.txz
+                    rm -f "&plgPATH;/"*.md5
+                    rm -f "&plgPATH;/"*.sha256
+                fi
 
-                # Create Config Directory before download attempts to write to it
+                # Remove old webUI files to prevent conflicts
+                rm -rf "&emhttp;"
+
+                # Recreate plugin directory
+                mkdir -p "&emhttp;"
+
+                # Create config directory
                 mkdir -p "&plgPATH;"
         </INLINE>
 </FILE>
 
-<FILE Name="&plgPATH;/&name;-&version;.txz" Run="upgradepkg --install-new --reinstall">
-    <URL>&archive;</URL>
-    <SHA256>&sha256;</SHA256>
+<!-- ============================================ -->
+<!-- INSTALL: Source files from src/              -->
+<!-- ============================================ -->
+<FILE Name="&emhttp;/activestreams_api.php">
+    <URL>&gitURL;/src/activestreams_api.php</URL>
 </FILE>
 
-<!-- Cache the package locally for faster boot (avoids re-download) -->
-<FILE Name="&plgPATH;/&name;-&version;.txz">
-    <LOCAL>&plgPATH;/&name;-&version;.txz</LOCAL>
+<FILE Name="&emhttp;/activestreams_servers.php">
+    <URL>&gitURL;/src/activestreams_servers.php</URL>
+</FILE>
+
+<FILE Name="&emhttp;/ActiveStreamsDashboard.page">
+    <URL>&gitURL;/src/ActiveStreamsDashboard.page</URL>
+</FILE>
+
+<FILE Name="&emhttp;/ActiveStreamsSettings.page">
+    <URL>&gitURL;/src/ActiveStreamsSettings.page</URL>
+</FILE>
+
+<!-- ============================================ -->
+<!-- INSTALL: Metadata files (icons)              -->
+<!-- ============================================ -->
+<FILE Name="&emhttp;/streams.png">
+    <URL>&gitURL;/metadata/streams.png</URL>
+</FILE>
+
+<FILE Name="&emhttp;/plex.png">
+    <URL>&gitURL;/metadata/plex.png</URL>
+</FILE>
+
+<FILE Name="&emhttp;/emby.png">
+    <URL>&gitURL;/metadata/emby.png</URL>
+</FILE>
+
+<FILE Name="&emhttp;/jellyfin.png">
+    <URL>&gitURL;/metadata/jellyfin.png</URL>
 </FILE>
 
 <FILE Run="/bin/bash">
@@ -152,20 +197,23 @@ https://raw.githubusercontent.com/gthrift/activestreams-unraid/BRANCH_NAME/activ
         </INLINE>
 </FILE>
 
+<!-- ============================================ -->
+<!-- UNINSTALL                                    -->
+<!-- ============================================ -->
 <FILE Run="/bin/bash" Method="remove">
         <INLINE>
                 echo "Uninstalling BETA version of &name;..."
 
-                # uninstall plugin
-                removepkg &plgPATH;/*.txz
+                # Remove all plugin files from emhttp
+                rm -rf "&emhttp;"
 
-                rm -rf &emhttp;
-                rm -rf &plgPATH;/*.txz \
-                       &plgPATH;/*.md5 \
-                       &plgPATH;/*.sha256
+                # Remove any legacy package files from previous installs
+                rm -f "&plgPATH;/"*.txz
+                rm -f "&plgPATH;/"*.md5
+                rm -f "&plgPATH;/"*.sha256
 
                 # Configuration files are preserved for future reinstallation
-                # To manually remove configs, delete: &plgPATH;/activestreams.cfg and &plgPATH;/servers.json
+                # Preserved: &plgPATH;/activestreams.cfg and &plgPATH;/servers.json
 
                 echo ""
                 echo "-----------------------------------------------------------"
