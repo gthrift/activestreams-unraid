@@ -2,8 +2,8 @@
 <!DOCTYPE PLUGIN [
 <!ENTITY name      "activestreams">
 <!ENTITY author    "gthrift">
-<!ENTITY version   "2026.02.04">
-<!ENTITY sha256    "95108c3dcc831319a3cfe153c978c7d3d4287a1ac004a265914f67528f569705">
+<!ENTITY version   "2026.02.05">
+<!ENTITY sha256    "f0eaaa7c854ab92d561f377da9d3ab42a305d2aaa0b5fff2ec2bfb0c40fafd78">
 <!ENTITY launch    "Settings/ActiveStreamsSettings">
 <!ENTITY gitURL    "https://raw.githubusercontent.com/gthrift/activestreams-unraid/main">
 <!ENTITY pluginURL "&gitURL;/activestreams.plg">
@@ -23,6 +23,9 @@
         min="6.12.0">
 
 <CHANGES>
+###2026.02.05
+- Bug fixes and improvements
+
 ###2026.02.04
 - Rolled back scrolling title on hover option.  Will work on reimplementing down the road.  
 - Made CSS improvements... maybe.
