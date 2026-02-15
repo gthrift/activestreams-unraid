@@ -24,7 +24,9 @@
 
 <CHANGES>
 ###2026.02.05
-- Bug fixes and improvements
+- fixed Plex streams showing transcoding when Directly Playing
+- added additional  details to the transcoding mouse over tooltip
+- added enble/disable toggle for servers to the settings page
 
 ###2026.02.04
 - Rolled back scrolling title on hover option.  Will work on reimplementing down the road.  
