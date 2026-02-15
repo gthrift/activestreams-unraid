@@ -230,7 +230,8 @@ switch ($action) {
             'port' => $_POST['port'] ?? '',
             'token' => $_POST['token'] ?? '',
             'ssl' => $_POST['ssl'] ?? '0',
-            'ssl_verify' => $_POST['ssl_verify'] ?? '0'
+            'ssl_verify' => $_POST['ssl_verify'] ?? '0',
+            'enabled' => '1'
         ];
 
         $validationErrors = validateServerData($serverData);
@@ -265,7 +266,8 @@ switch ($action) {
             'port' => $_POST['port'] ?? '',
             'token' => $_POST['token'] ?? '',
             'ssl' => $_POST['ssl'] ?? '0',
-            'ssl_verify' => $_POST['ssl_verify'] ?? '0'
+            'ssl_verify' => $_POST['ssl_verify'] ?? '0',
+            'enabled' => $servers[$index]['enabled'] ?? '1'
         ];
 
         $validationErrors = validateServerData($serverData);
@@ -300,6 +302,24 @@ switch ($action) {
         }
         break;
         
+    case 'toggle':
+        $index = (int)($_POST['index'] ?? -1);
+        $servers = loadServers();
+
+        if ($index < 0 || $index >= count($servers)) {
+            echo json_encode(['success' => false, 'error' => 'Invalid index']);
+            break;
+        }
+
+        $servers[$index]['enabled'] = ($servers[$index]['enabled'] ?? '1') === '1' ? '0' : '1';
+
+        if (saveServers($servers)) {
+            echo json_encode(['success' => true, 'enabled' => $servers[$index]['enabled']]);
+        } else {
+            echo json_encode(['success' => false, 'error' => 'Failed to save']);
+        }
+        break;
+
     case 'test':
         $result = testConnection(
             $_POST['type'] ?? 'plex',

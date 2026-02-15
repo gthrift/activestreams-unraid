@@ -413,6 +413,9 @@ $handles = [];
 $serverMap = [];
 
 foreach ($servers as $index => $server) {
+    if (isset($server['enabled']) && $server['enabled'] === '0') {
+        continue;
+    }
     $ch = buildCurlHandle($server);
     if ($ch !== null) {
         $handles[$index] = $ch;
