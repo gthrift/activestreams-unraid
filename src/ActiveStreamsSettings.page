@@ -43,6 +43,43 @@ IconFA="film"
     .as-server-item .server-name { flex: 1; }
     .as-server-item .server-host { opacity: 0.7; flex: 1; }
     .as-server-item .server-actions { display: flex; gap: 10px; }
+    .as-server-item.disabled .server-type,
+    .as-server-item.disabled .server-name,
+    .as-server-item.disabled .server-host { opacity: 0.4; }
+
+    /* Toggle switch */
+    .as-toggle {
+        position: relative;
+        width: 40px;
+        height: 22px;
+        flex-shrink: 0;
+    }
+    .as-toggle input { display: none; }
+    .as-toggle .as-toggle-slider {
+        position: absolute;
+        cursor: pointer;
+        top: 0; left: 0; right: 0; bottom: 0;
+        background: rgba(128,128,128,0.4);
+        border-radius: 22px;
+        transition: background 0.2s;
+    }
+    .as-toggle .as-toggle-slider:before {
+        content: "";
+        position: absolute;
+        height: 16px;
+        width: 16px;
+        left: 3px;
+        bottom: 3px;
+        background: white;
+        border-radius: 50%;
+        transition: transform 0.2s;
+    }
+    .as-toggle input:checked + .as-toggle-slider {
+        background: #5cb85c;
+    }
+    .as-toggle input:checked + .as-toggle-slider:before {
+        transform: translateX(18px);
+    }
     
     .as-btn { 
         padding: 8px 16px; 
@@ -272,7 +309,12 @@ if (!is_array($servers)) $servers = [];
             </div>
         <?php else: ?>
             <?php foreach ($servers as $index => $server): ?>
-                <div class="as-server-item" data-index="<?php echo $index; ?>">
+                <?php $isEnabled = ($server['enabled'] ?? '1') === '1'; ?>
+                <div class="as-server-item<?php echo $isEnabled ? '' : ' disabled'; ?>" data-index="<?php echo $index; ?>">
+                    <label class="as-toggle" title="<?php echo $isEnabled ? '_(Enabled)_' : '_(Disabled)_'; ?>">
+                        <input type="checkbox" <?php echo $isEnabled ? 'checked' : ''; ?> onchange="toggleServer(<?php echo $index; ?>)">
+                        <span class="as-toggle-slider"></span>
+                    </label>
                     <span class="server-type type-<?php echo htmlspecialchars($server['type']); ?>">
                         <i class="fa fa-<?php echo $server['type'] === 'plex' ? 'play-circle' : ($server['type'] === 'emby' ? 'film' : 'film'); ?>"></i>
                         <?php echo htmlspecialchars($server['type']); ?>
@@ -440,6 +482,37 @@ function closeModal() {
     $('#serverModal').fadeOut(200);
 }
 
+function toggleServer(index) {
+    $.post('/plugins/activestreams/activestreams_servers.php', {
+        action: 'toggle',
+        index: index
+    }, function(response) {
+        if (response.success) {
+            var item = $('.as-server-item[data-index="' + index + '"]');
+            var toggle = item.find('.as-toggle input');
+            if (response.enabled === '1') {
+                item.removeClass('disabled');
+                toggle.prop('checked', true);
+                item.find('.as-toggle').attr('title', '_(Enabled)_');
+            } else {
+                item.addClass('disabled');
+                toggle.prop('checked', false);
+                item.find('.as-toggle').attr('title', '_(Disabled)_');
+            }
+            servers[index].enabled = response.enabled;
+        } else {
+            alert('_(Error toggling server)_: ' + response.error);
+            // Revert checkbox on failure
+            var toggle = $('.as-server-item[data-index="' + index + '"] .as-toggle input');
+            toggle.prop('checked', !toggle.prop('checked'));
+        }
+    }, 'json').fail(function() {
+        alert('_(Request failed)_');
+        var toggle = $('.as-server-item[data-index="' + index + '"] .as-toggle input');
+        toggle.prop('checked', !toggle.prop('checked'));
+    });
+}
+
 function deleteServer(index) {
     if (confirm('_(Are you sure you want to delete this server?)_')) {
         $.post('/plugins/activestreams/activestreams_servers.php', {
@@ -451,7 +524,9 @@ function deleteServer(index) {
             } else {
                 alert('_(Error deleting server)_: ' + response.error);
             }
-        }, 'json');
+        }, 'json').fail(function(jqXHR) {
+            alert('_(Error deleting server)_: Request failed (HTTP ' + jqXHR.status + '). Check your server configuration.');
+        });
     }
 }
 
@@ -507,7 +582,9 @@ $('#serverForm').on('submit', function(e) {
         } else {
             alert('_(Error saving server)_: ' + response.error);
         }
-    }, 'json');
+    }, 'json').fail(function(jqXHR) {
+        alert('_(Error saving server)_: Request failed (HTTP ' + jqXHR.status + '). Check your server configuration.');
+    });
 });
 
 // Close modal on background click

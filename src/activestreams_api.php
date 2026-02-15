@@ -57,6 +57,31 @@ function formatTime($seconds) {
     return sprintf("%d:%02d", $minutes, $secs);
 }
 
+function formatBitrate($kbps) {
+    if (!$kbps || !is_numeric($kbps)) return '';
+    $kbps = (int)$kbps;
+    if ($kbps >= 1000) {
+        return round($kbps / 1000, 1) . ' Mbps';
+    }
+    return $kbps . ' kbps';
+}
+
+function formatResolution($height) {
+    if (!$height || !is_numeric($height)) return '';
+    return $height . 'p';
+}
+
+function formatChannels($channels) {
+    if (!$channels || !is_numeric($channels)) return '';
+    switch ((int)$channels) {
+        case 1: return 'Mono';
+        case 2: return 'Stereo';
+        case 6: return '5.1';
+        case 8: return '7.1';
+        default: return $channels . 'ch';
+    }
+}
+
 
 function buildCurlHandle($server) {
     $protocol = ($server['ssl'] === '1' || $server['ssl'] === true) ? 'https' : 'http';
@@ -154,28 +179,66 @@ function parsePlexResponse($server, $response) {
             $transcodeDetails = [];
 
             if (isset($session['TranscodeSession'])) {
-                $isTranscoding = true;
                 $ts = $session['TranscodeSession'];
+                $vidDec = $ts['videoDecision'] ?? '';
+                $audDec = $ts['audioDecision'] ?? '';
+                $isTranscoding = ($vidDec === 'transcode' || $audDec === 'transcode');
 
-                if (isset($ts['videoDecision']) && $ts['videoDecision'] === 'transcode') {
-                    $transcodeDetails[] = "Video: Transcoding";
-                    if (isset($ts['transcodeHwRequested']) && $ts['transcodeHwRequested']) {
-                        $transcodeDetails[] = "Hardware Accelerated";
-                    } else {
-                        $transcodeDetails[] = "Software Transcode";
+                if ($isTranscoding) {
+                    // Source info from Media object
+                    $media = $session['Media'][0] ?? [];
+                    $srcContainer = strtoupper($media['container'] ?? '');
+                    $srcBitrate = formatBitrate($media['bitrate'] ?? 0);
+                    $srcHeight = $media['height'] ?? 0;
+                    $srcAudioChannels = formatChannels($media['audioChannels'] ?? 0);
+
+                    // Source codecs from TranscodeSession
+                    $srcVideoCodec = strtoupper($ts['sourceVideoCodec'] ?? '');
+                    $srcAudioCodec = strtoupper($ts['sourceAudioCodec'] ?? '');
+
+                    // Target info from TranscodeSession
+                    $tgtContainer = strtoupper($ts['container'] ?? '');
+                    $tgtVideoCodec = strtoupper($ts['videoCodec'] ?? '');
+                    $tgtAudioCodec = strtoupper($ts['audioCodec'] ?? '');
+                    $tgtAudioChannels = formatChannels($ts['audioChannels'] ?? 0);
+
+                    $hwAccel = !empty($ts['transcodeHwRequested']);
+                    $hwTag = $hwAccel ? ' [HW]' : '';
+
+                    // Stream line
+                    $streamLine = "Stream: $srcContainer";
+                    if ($srcBitrate) $streamLine .= " ($srcBitrate)";
+                    if ($tgtContainer) $streamLine .= " → $tgtContainer";
+                    $throttled = $ts['throttled'] ?? false;
+                    $speed = $ts['speed'] ?? 0;
+                    if ($throttled) {
+                        $streamLine .= " (Throttled)";
+                    } elseif ($speed && is_numeric($speed)) {
+                        $streamLine .= " (" . round((float)$speed, 1) . "x)";
                     }
-                } elseif (isset($ts['videoDecision'])) {
-                    $transcodeDetails[] = "Video: " . ucfirst($ts['videoDecision']);
-                }
+                    $transcodeDetails[] = $streamLine;
 
-                if (isset($ts['audioDecision']) && $ts['audioDecision'] === 'transcode') {
-                    $transcodeDetails[] = "Audio: Transcoding";
-                } elseif (isset($ts['audioDecision'])) {
-                    $transcodeDetails[] = "Audio: " . ucfirst($ts['audioDecision']);
-                }
+                    // Video line
+                    $srcRes = formatResolution($srcHeight);
+                    if ($vidDec === 'transcode') {
+                        $videoLine = "Video: ";
+                        if ($srcRes) $videoLine .= "$srcRes ";
+                        $videoLine .= "$srcVideoCodec → $tgtVideoCodec$hwTag";
+                    } else {
+                        $videoLine = "Video: Direct " . ucfirst($vidDec);
+                    }
+                    $transcodeDetails[] = $videoLine;
 
-                if (isset($ts['transcodeHwFullPipeline'])) {
-                    $transcodeDetails[] = $ts['transcodeHwFullPipeline'] ? "Full HW Pipeline" : "Partial HW";
+                    // Audio line
+                    if ($audDec === 'transcode') {
+                        $audioLine = "Audio: $srcAudioCodec";
+                        if ($srcAudioChannels) $audioLine .= " $srcAudioChannels";
+                        $audioLine .= " → $tgtAudioCodec";
+                        if ($tgtAudioChannels) $audioLine .= " $tgtAudioChannels";
+                    } else {
+                        $audioLine = "Audio: Direct " . ucfirst($audDec);
+                    }
+                    $transcodeDetails[] = $audioLine;
                 }
             }
 
@@ -235,31 +298,93 @@ function parseEmbyJellyfinResponse($server, $response) {
             $duration = isset($item['RunTimeTicks']) ? $item['RunTimeTicks'] / 10000000 : 0;
 
             $playMethod = $session['PlayState']['PlayMethod'] ?? 'DirectPlay';
-            $isTranscoding = ($playMethod === 'Transcode');
             $transcodeDetails = [];
 
-            if ($isTranscoding && isset($session['TranscodingInfo'])) {
-                $ti = $session['TranscodingInfo'];
+            // Extract source info from MediaStreams
+            $mediaStreams = $item['MediaStreams'] ?? [];
+            $srcVideo = null;
+            $srcAudio = null;
+            foreach ($mediaStreams as $ms) {
+                if (!$srcVideo && ($ms['Type'] ?? '') === 'Video') $srcVideo = $ms;
+                if (!$srcAudio && ($ms['Type'] ?? '') === 'Audio') $srcAudio = $ms;
+            }
 
-                if (isset($ti['IsVideoDirect'])) {
-                    $transcodeDetails[] = $ti['IsVideoDirect'] ? "Video: Direct Stream" : "Video: Transcoding";
+            $isTranscoding = false;
+
+            if ($playMethod === 'Transcode' && isset($session['TranscodingInfo'])) {
+                $ti = $session['TranscodingInfo'];
+                $vidDirect = $ti['IsVideoDirect'] ?? true;
+                $audDirect = $ti['IsAudioDirect'] ?? true;
+
+                // If both video and audio are direct, this is a container remux, not real transcoding
+                $isTranscoding = (!$vidDirect || !$audDirect);
+
+                if ($isTranscoding) {
+                    $srcContainer = strtoupper($item['Container'] ?? '');
+                    $srcVideoBitrate = $srcVideo['BitRate'] ?? 0;
+                    $srcVideoCodec = strtoupper($srcVideo['Codec'] ?? '');
+                    $srcHeight = $srcVideo['Height'] ?? 0;
+                    $srcAudioCodec = strtoupper($srcAudio['Codec'] ?? '');
+                    $srcAudioChannels = formatChannels($srcAudio['Channels'] ?? 0);
+
+                    $tgtContainer = strtoupper($ti['Container'] ?? '');
+                    $tgtVideoCodec = strtoupper($ti['VideoCodec'] ?? '');
+                    $tgtAudioCodec = strtoupper($ti['AudioCodec'] ?? '');
+                    $tgtBitrate = formatBitrate(isset($ti['Bitrate']) ? $ti['Bitrate'] / 1000 : 0);
+                    $tgtHeight = $ti['Height'] ?? 0;
+                    $tgtAudioChannels = formatChannels($ti['AudioChannels'] ?? 0);
+                    $tgtFramerate = $ti['Framerate'] ?? 0;
+
+                    $hwAccelType = $ti['HardwareAccelerationType'] ?? '';
+                    $hwTag = $hwAccelType ? " [HW]" : '';
+
+                    // Stream line
+                    $streamLine = "Stream: $srcContainer";
+                    $srcTotalBitrate = formatBitrate(($item['Bitrate'] ?? 0) / 1000);
+                    if (!$srcTotalBitrate && $srcVideoBitrate) {
+                        $srcTotalBitrate = formatBitrate($srcVideoBitrate / 1000);
+                    }
+                    if ($srcTotalBitrate) $streamLine .= " ($srcTotalBitrate)";
+                    if ($tgtContainer) {
+                        $streamLine .= " → $tgtContainer";
+                        $tgtInfo = [];
+                        if ($tgtBitrate) $tgtInfo[] = $tgtBitrate;
+                        if ($tgtFramerate) $tgtInfo[] = round((float)$tgtFramerate) . ' fps';
+                        if (!empty($tgtInfo)) $streamLine .= ' (' . implode(', ', $tgtInfo) . ')';
+                    }
+                    $transcodeDetails[] = $streamLine;
+
+                    // Video line
+                    $srcRes = formatResolution($srcHeight);
+                    if (!$vidDirect) {
+                        $videoLine = "Video: ";
+                        if ($srcRes) $videoLine .= "$srcRes ";
+                        $videoLine .= "$srcVideoCodec → $tgtVideoCodec";
+                        if ($tgtHeight && $tgtHeight != $srcHeight) {
+                            $videoLine .= ' ' . formatResolution($tgtHeight);
+                        }
+                        $videoLine .= $hwTag;
+                    } else {
+                        $videoLine = "Video: Direct Stream";
+                    }
+                    $transcodeDetails[] = $videoLine;
+
+                    // Audio line
+                    if (!$audDirect) {
+                        $audioLine = "Audio: $srcAudioCodec";
+                        if ($srcAudioChannels) $audioLine .= " $srcAudioChannels";
+                        $audioLine .= " → $tgtAudioCodec";
+                        if ($tgtAudioChannels) $audioLine .= " $tgtAudioChannels";
+                    } else {
+                        $audioLine = "Audio: Direct Stream";
+                    }
+                    $transcodeDetails[] = $audioLine;
+
+                    // Reason line
+                    if (isset($ti['TranscodeReasons']) && is_array($ti['TranscodeReasons']) && !empty($ti['TranscodeReasons'])) {
+                        $transcodeDetails[] = "Reason: " . implode(', ', $ti['TranscodeReasons']);
+                    }
                 }
-                if (isset($ti['IsAudioDirect'])) {
-                    $transcodeDetails[] = $ti['IsAudioDirect'] ? "Audio: Direct Stream" : "Audio: Transcoding";
-                }
-                if (isset($ti['VideoCodec'])) {
-                    $transcodeDetails[] = "Codec: " . strtoupper($ti['VideoCodec']);
-                }
-                if (isset($ti['TranscodeReasons']) && is_array($ti['TranscodeReasons'])) {
-                    $transcodeDetails[] = "Reason: " . implode(', ', $ti['TranscodeReasons']);
-                }
-                if (isset($ti['HardwareAccelerationType']) && $ti['HardwareAccelerationType']) {
-                    $transcodeDetails[] = "HW Accel: " . $ti['HardwareAccelerationType'];
-                }
-            } elseif ($playMethod === 'DirectStream') {
-                $transcodeDetails[] = "Direct Stream (Container remux)";
-            } else {
-                $transcodeDetails[] = "Direct Play";
             }
 
             $streams[] = [
@@ -288,6 +413,9 @@ $handles = [];
 $serverMap = [];
 
 foreach ($servers as $index => $server) {
+    if (isset($server['enabled']) && $server['enabled'] === '0') {
+        continue;
+    }
     $ch = buildCurlHandle($server);
     if ($ch !== null) {
         $handles[$index] = $ch;
@@ -357,8 +485,8 @@ if (empty($allStreams)) {
         
         $transcodeHtml = '';
         if ($s['transcoding']) {
-            $transcodeTooltip = !empty($s['transcode_details']) 
-                ? htmlspecialchars(implode(" | ", $s['transcode_details'])) 
+            $transcodeTooltip = !empty($s['transcode_details'])
+                ? htmlspecialchars(implode("\n", $s['transcode_details']))
                 : 'Transcoding';
             $transcodeHtml = " <i class='fa fa-random' style='color:#e5a00d; cursor:help;' title='$transcodeTooltip'></i>";
         }

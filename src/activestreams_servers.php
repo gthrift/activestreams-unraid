@@ -13,26 +13,29 @@ function validateRequestOrigin() {
     }
 
     $serverHost = $_SERVER['HTTP_HOST'] ?? '';
+    // Strip port from HTTP_HOST so comparison works on non-standard ports
+    $serverHostOnly = parse_url('http://' . $serverHost, PHP_URL_HOST) ?: $serverHost;
+    $serverAddr = $_SERVER['SERVER_ADDR'] ?? '';
 
     if (isset($_SERVER['HTTP_ORIGIN'])) {
         $origin = parse_url($_SERVER['HTTP_ORIGIN'], PHP_URL_HOST);
-        if ($origin && $origin === $serverHost) {
-            return true;
-        }
-
-        $serverAddr = $_SERVER['SERVER_ADDR'] ?? '';
-        if ($origin && $origin === $serverAddr) {
+        if ($origin && ($origin === $serverHostOnly || $origin === $serverAddr)) {
             return true;
         }
     }
 
     if (isset($_SERVER['HTTP_REFERER'])) {
         $referer = parse_url($_SERVER['HTTP_REFERER'], PHP_URL_HOST);
-        if ($referer && $referer === $serverHost) {
+        if ($referer && ($referer === $serverHostOnly || $referer === $serverAddr)) {
             return true;
         }
-        $serverAddr = $_SERVER['SERVER_ADDR'] ?? '';
-        if ($referer && $referer === $serverAddr) {
+    }
+
+    // Fallback: if neither Origin nor Referer is present (privacy extensions, some
+    // reverse proxies), allow XMLHttpRequest calls which are same-origin by default
+    if (!isset($_SERVER['HTTP_ORIGIN']) && !isset($_SERVER['HTTP_REFERER'])) {
+        if (isset($_SERVER['HTTP_X_REQUESTED_WITH']) &&
+            strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) === 'xmlhttprequest') {
             return true;
         }
     }
@@ -65,6 +68,10 @@ function loadServers() {
 
 function saveServers($servers) {
     global $servers_file;
+    $dir = dirname($servers_file);
+    if (!is_dir($dir)) {
+        mkdir($dir, 0755, true);
+    }
     $result = file_put_contents($servers_file, json_encode($servers, JSON_PRETTY_PRINT));
 
     if ($result === false) {
@@ -223,7 +230,8 @@ switch ($action) {
             'port' => $_POST['port'] ?? '',
             'token' => $_POST['token'] ?? '',
             'ssl' => $_POST['ssl'] ?? '0',
-            'ssl_verify' => $_POST['ssl_verify'] ?? '0'
+            'ssl_verify' => $_POST['ssl_verify'] ?? '0',
+            'enabled' => '1'
         ];
 
         $validationErrors = validateServerData($serverData);
@@ -258,7 +266,8 @@ switch ($action) {
             'port' => $_POST['port'] ?? '',
             'token' => $_POST['token'] ?? '',
             'ssl' => $_POST['ssl'] ?? '0',
-            'ssl_verify' => $_POST['ssl_verify'] ?? '0'
+            'ssl_verify' => $_POST['ssl_verify'] ?? '0',
+            'enabled' => $servers[$index]['enabled'] ?? '1'
         ];
 
         $validationErrors = validateServerData($serverData);
@@ -293,6 +302,24 @@ switch ($action) {
         }
         break;
         
+    case 'toggle':
+        $index = (int)($_POST['index'] ?? -1);
+        $servers = loadServers();
+
+        if ($index < 0 || $index >= count($servers)) {
+            echo json_encode(['success' => false, 'error' => 'Invalid index']);
+            break;
+        }
+
+        $servers[$index]['enabled'] = ($servers[$index]['enabled'] ?? '1') === '1' ? '0' : '1';
+
+        if (saveServers($servers)) {
+            echo json_encode(['success' => true, 'enabled' => $servers[$index]['enabled']]);
+        } else {
+            echo json_encode(['success' => false, 'error' => 'Failed to save']);
+        }
+        break;
+
     case 'test':
         $result = testConnection(
             $_POST['type'] ?? 'plex',
