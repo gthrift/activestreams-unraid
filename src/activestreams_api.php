@@ -19,6 +19,7 @@ if (!file_exists($cfg_file)) {
 $cfg = parse_ini_file($cfg_file);
 
 $showEpisodeNumbers = isset($cfg['SHOW_EPISODE_NUMBERS']) ? ($cfg['SHOW_EPISODE_NUMBERS'] === '1') : false;
+$showPlayStatus     = isset($cfg['SHOW_PLAY_STATUS'])    ? ($cfg['SHOW_PLAY_STATUS']    === '1') : false;
 
 if (!file_exists($servers_file)) {
     echo "<div style='padding:15px; text-align:center; color:#eebb00;'>
@@ -55,6 +56,14 @@ function formatTime($seconds) {
         return sprintf("%d:%02d:%02d", $hours, $minutes, $secs);
     }
     return sprintf("%d:%02d", $minutes, $secs);
+}
+
+function formatTimeFull($seconds) {
+    $seconds = max(0, (int)$seconds);
+    $hours   = floor($seconds / 3600);
+    $minutes = floor(($seconds % 3600) / 60);
+    $secs    = $seconds % 60;
+    return sprintf("%d:%02d:%02d", $hours, $minutes, $secs);
 }
 
 function formatBitrate($kbps) {
@@ -470,12 +479,13 @@ if (empty($allStreams)) {
         
         $isPaused = ($s['state'] === 'paused');
         $statusColor = $isPaused ? "#f0ad4e" : "#8cc43c";
-        $statusIcon = $isPaused ? "fa-pause" : "fa-play";
-        
+
         $progressStr = formatTime($s['progress']);
         $durationStr = formatTime($s['duration']);
         $timeDisplay = "$progressStr / $durationStr";
-        
+
+        $timeTooltip = htmlspecialchars(formatTimeFull($s['progress']) . ' / ' . formatTimeFull($s['duration']));
+
         $typeColors = [
             'plex' => '#e5a00d',
             'emby' => '#52b54b', 
@@ -497,17 +507,23 @@ if (empty($allStreams)) {
                 <i class='fa fa-circle' style='font-size:8px;'></i>
               </span>";
         
-        echo "<span class='as-name' title='$title'>$title</span>";
+        echo "<span class='as-name'><span class='as-name-text' title='$title'>$title</span></span>";
         
         echo "<span class='as-device' title='$device'>$device</span>";
         
         echo "<span class='as-user' title='$user'>$user</span>";
         
-        echo "<span class='as-time' style='color:$statusColor;' title='$timeDisplay'>
-                <i class='fa $statusIcon' style='font-size:9px;'></i>
-                $transcodeHtml
-                <span style='margin-left:4px;'>$timeDisplay</span>
-              </span>";
+        echo "<span class='as-time'>";
+        if ($s['transcoding']) {
+            echo $transcodeHtml;
+        }
+        if ($showPlayStatus) {
+            $statusText = $isPaused ? "Paused" : "Playing";
+            echo "<span style='color:{$statusColor}; cursor:default;' title='{$timeTooltip}'>{$statusText}</span>";
+        } else {
+            echo "<span style='color:{$statusColor};'>{$timeDisplay}</span>";
+        }
+        echo "</span>";
         
         echo "</div>";
     }
