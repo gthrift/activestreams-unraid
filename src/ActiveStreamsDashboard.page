@@ -111,7 +111,6 @@ Icon="streams.png"
         font-size: 1.1rem !important;
         text-transform: uppercase;
         letter-spacing: 1px;
-        opacity: 0.6;
         padding-bottom: 5px;
         border-bottom: 1px solid rgba(255,255,255,0.1);
         margin-bottom: 5px;
