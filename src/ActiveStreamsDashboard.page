@@ -46,10 +46,9 @@ Icon="streams.png"
         border-bottom: 1px solid rgba(255,255,255,0.05);
         padding: 6px 0;
         overflow: hidden;
-        font-size: 1rem;
     }
     .as-row:last-child { border-bottom: none; }
-    .as-transcode { font-size: 1rem; margin-right: 4px; }
+    .as-transcode { margin-right: 4px; }
 
     .as-server {
         width: 20px;
