@@ -108,7 +108,6 @@ Icon="streams.png"
 
     /* Column headers: Unraid standard styling */
     .as-header-row {
-        font-family: 'Inter', sans-serif;
         font-size: 1.1rem !important;
         text-transform: uppercase;
         letter-spacing: 1px;
