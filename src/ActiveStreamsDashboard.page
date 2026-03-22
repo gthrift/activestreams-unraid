@@ -61,7 +61,6 @@ Icon="streams.png"
         width: 0;
         min-width: 0;
         padding-right: 10px;
-        /* Default: 2-line wrap with ellipsis */
         display: -webkit-box;
         -webkit-line-clamp: 2;
         -webkit-box-orient: vertical;
@@ -97,6 +96,7 @@ Icon="streams.png"
         flex: 1 1 0;
         width: 0;
         min-width: 0;
+        text-align: center;
         white-space: nowrap;
         overflow: hidden;
         text-overflow: ellipsis;
