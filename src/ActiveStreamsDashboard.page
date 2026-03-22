@@ -99,7 +99,8 @@ Icon="streams.png"
         min-width: 0;
         text-align: right;
         font-family: monospace;
-        font-size: 12px;
+        font-size: 11px;
+        letter-spacing: -0.5px;
         white-space: nowrap;
         overflow: hidden;
         text-overflow: ellipsis;

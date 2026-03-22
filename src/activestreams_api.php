@@ -498,7 +498,7 @@ if (empty($allStreams)) {
             $transcodeTooltip = !empty($s['transcode_details'])
                 ? htmlspecialchars(implode("\n", $s['transcode_details']))
                 : 'Transcoding';
-            $transcodeHtml = " <i class='fa fa-random' style='color:#e5a00d; cursor:help;' title='$transcodeTooltip'></i>";
+            $transcodeHtml = " <i class='fa fa-random as-transcode' style='color:#e5a00d; cursor:help;' title='$transcodeTooltip'></i>";
         }
         
         echo "<div class='as-row'>";
