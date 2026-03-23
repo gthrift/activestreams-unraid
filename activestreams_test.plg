@@ -4,7 +4,7 @@
 <!ENTITY author    "gthrift">
 <!ENTITY version   "2026.02.05.1 beta">
 <!ENTITY launch    "Settings/ActiveStreamsSettings">
-<!ENTITY gitURL    "https://raw.githubusercontent.com/gthrift/activestreams-unraid/claude/unraid-column-headers-ZArrj">
+<!ENTITY gitURL    "https://raw.githubusercontent.com/gthrift/activestreams-unraid/main
 <!ENTITY pluginURL "&gitURL;/activestreams_test.plg">
 <!ENTITY emhttp    "/usr/local/emhttp/plugins/&name;">
 <!ENTITY plgPATH   "/boot/config/plugins/&name;">
