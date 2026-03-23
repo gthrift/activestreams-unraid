@@ -23,6 +23,12 @@
         min="6.12.0">
 
 <CHANGES>
+###2026.03.23
+- Added options to hide User and Device columns
+- Added option to scroll long text
+- Added option to choose time stamps or text status
+- Updated widget formatting to align with unraid style
+
 ###2026.02.05
 - fixed Plex streams showing transcoding when Directly Playing
 - added additional  details to the transcoding mouse over tooltip
