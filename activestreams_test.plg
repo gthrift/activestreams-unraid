@@ -2,7 +2,7 @@
 <!DOCTYPE PLUGIN [
 <!ENTITY name      "activestreams">
 <!ENTITY author    "gthrift">
-<!ENTITY version   "2026.02.05.1 beta">
+<!ENTITY version   "2026.03.23-beta">
 <!ENTITY launch    "Settings/ActiveStreamsSettings">
 <!ENTITY gitURL    "https://raw.githubusercontent.com/gthrift/activestreams-unraid/main
 <!ENTITY pluginURL "&gitURL;/activestreams_test.plg">
@@ -21,6 +21,9 @@
         min="6.12.0">
 
 <CHANGES>
+###2026.03.23-beta
+- Beta build for testing
+
 ###Test PLG
 - Direct file installation from GitHub (no package build required)
 </CHANGES>
