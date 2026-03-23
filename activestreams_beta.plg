@@ -1,0 +1,156 @@
+<?xml version='1.0' standalone='yes'?>
+<!DOCTYPE PLUGIN [
+<!ENTITY name      "activestreams">
+<!ENTITY author    "gthrift">
+<!ENTITY version   "2026.02.05">
+<!ENTITY sha256    "f0eaaa7c854ab92d561f377da9d3ab42a305d2aaa0b5fff2ec2bfb0c40fafd78">
+<!ENTITY launch    "Settings/ActiveStreamsSettings">
+<!ENTITY gitURL    "https://raw.githubusercontent.com/gthrift/activestreams-unraid/main">
+<!ENTITY pluginURL "&gitURL;/activestreams.plg">
+<!ENTITY archive   "&gitURL;/archive/&name;-&version;.txz">
+<!ENTITY emhttp    "/usr/local/emhttp/plugins/&name;">
+<!ENTITY plgPATH   "/boot/config/plugins/&name;">
+]>
+
+<PLUGIN name="&name;" 
+        author="&author;" 
+        version="&version;" 
+        launch="&launch;" 
+        pluginURL="&pluginURL;"
+        support="https://forums.unraid.net/topic/196336-plugin-active-streams-display-your-active-embyjellyfinplex-streams-on-your-dashboard/"
+        IconFA="film"
+        icon="streams.png" 
+        min="6.12.0">
+
+<CHANGES>
+###2026.02.05
+- fixed Plex streams showing transcoding when Directly Playing
+- added additional  details to the transcoding mouse over tooltip
+- added enble/disable toggle for servers to the settings page
+
+###2026.02.04
+- Rolled back scrolling title on hover option.  Will work on reimplementing down the road.  
+- Made CSS improvements... maybe.
+
+###2026.02.03
+- Added scroll title on hover option. (enabled in settings)
+- Fixed CSS issues
+
+###2026.02.02
+- Bug fixes and improvements
+
+##2026.02.02
+- Fixed widget width overflow when long media titles displayed
+
+###2026.02.01
+- Switched from MD5 to SHA256 for package integrity verification
+- Added CSRF protection to server management API
+- Set restrictive permissions (600) on servers.json to protect API tokens
+- Added configurable SSL certificate verification per server
+
+###2026.01.09
+- Set streaming episode details to display "Show Name" - "Episode Name".
+- Added option to include "S##E##" in streaming episode details.
+
+###2026.01.08
+- Fixed widget_title to remove extra characters (this will reset your widget positioning)
+- Fixed server settings window so it can be scrolled if the popup is taller than the page
+- Fixed settings page widget
+
+###2026.01.07
+- Rename ActiveStreams.page to ActiveStreamsDashboard.page to resolve issue with Dynamix Active Streams
+
+###2026.01.06
+- Testing new build script
+
+###2026.01.05
+- Fix install script that breaks SMB
+
+###2026.01.04
+- Fix permissions issues
+
+###2026.01.03
+- Bug fixes and improvements
+ - Better logging and error handling
+ - Removed widget on/of toggle
+
+###2026.01.02
+- Bug fixes and improvements
+
+###2026.01.01
+- Initial Release
+</CHANGES>
+
+<OVERVIEW>
+A plugin to create a dashboard widget that shows your active streams from Plex, Emby, and Jellyfin servers
+</OVERVIEW>
+
+<FILE Run="/bin/bash">
+        <INLINE>
+                # Remove old webUI files to prevent conflicts
+                # This runs before the new package is installed
+                rm -f "&emhttp;/*.page"
+                rm -f "&emhttp;/*.php"
+
+                # Create Config Directory before download attempts to write to it
+                mkdir -p "&plgPATH;"
+        </INLINE>
+</FILE>
+
+<FILE Name="&plgPATH;/&name;-&version;.txz" Run="upgradepkg --install-new --reinstall">
+    <URL>&archive;</URL>
+    <SHA256>&sha256;</SHA256>
+</FILE>
+
+<FILE Run="/bin/bash">
+        <INLINE>
+                # Set Default Config if missing
+                if [ ! -f "&plgPATH;/activestreams.cfg" ]; then
+                    echo "POLL_INTERVAL='5'" > "&plgPATH;/activestreams.cfg"
+                    echo "WIDGET_ICON='streams'" >> "&plgPATH;/activestreams.cfg"
+                    echo "WIDGET_TITLE='Active Streams'" >> "&plgPATH;/activestreams.cfg"
+                fi
+                
+                # Create empty servers config if missing
+                if [ ! -f "&plgPATH;/servers.json" ]; then
+                    echo "[]" > "&plgPATH;/servers.json"
+                fi
+                
+                echo ""
+                echo "-----------------------------------------------------------"
+                echo " &name; has been installed."
+                echo " Version: &version;"
+                echo "-----------------------------------------------------------"
+                echo ""
+        </INLINE>
+</FILE>
+
+<FILE Run="/bin/bash" Method="remove">
+        <INLINE>
+                echo "Uninstalling &name;..."
+
+                # uninstall plugin
+                removepkg &plgPATH;/*.txz
+                
+                rm -rf &emhttp;
+                rm -rf &plgPATH;/*.txz \
+                       &plgPATH;/*.md5
+                
+                # Configuration files are preserved for future reinstallation
+                # To manually remove configs, delete: &plgPATH;/activestreams.cfg and &plgPATH;/servers.json
+                
+                echo ""
+                echo "-----------------------------------------------------------"
+                echo " &name; has been uninstalled."
+                echo " Your server configurations have been preserved at:"
+                echo " &plgPATH;/"
+                echo ""
+                echo " To completely remove all settings, manually delete:"
+                echo " &plgPATH;/activestreams.cfg"
+                echo " &plgPATH;/servers.json"
+                echo "-----------------------------------------------------------"
+                echo ""
+        </INLINE>
+</FILE>
+
+</PLUGIN>
