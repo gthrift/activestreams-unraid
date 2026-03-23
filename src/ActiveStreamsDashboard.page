@@ -10,6 +10,8 @@ Icon="streams.png"
     $icon_file = "/plugins/activestreams/{$widget_icon}.png";
     $scroll_name = isset($cfg['SCROLL_NAME']) ? (int)$cfg['SCROLL_NAME'] : 0;
     $show_play_status = isset($cfg['SHOW_PLAY_STATUS']) ? (int)$cfg['SHOW_PLAY_STATUS'] : 0;
+    $show_device = isset($cfg['SHOW_DEVICE_COLUMN']) ? (int)$cfg['SHOW_DEVICE_COLUMN'] : 1;
+    $show_user   = isset($cfg['SHOW_USER_COLUMN'])   ? (int)$cfg['SHOW_USER_COLUMN']   : 1;
 ?>
 
 <style>
@@ -48,7 +50,7 @@ Icon="streams.png"
         overflow: hidden;
     }
     .as-row:last-child { border-bottom: none; }
-    .as-transcode { margin-right: 4px; }
+    .as-transcode {margin-right: 4px; }
 
     .as-server {
         width: 20px;
@@ -161,9 +163,22 @@ Icon="streams.png"
             display: none !important;
         }
     }
+
+    <?php if (!$show_device): ?>
+    .as-device { display: none !important; }
+    <?php endif; ?>
+    <?php if (!$show_user): ?>
+    .as-user { display: none !important; }
+    <?php endif; ?>
+    <?php if (!$show_device || !$show_user): ?>
+    .as-time { flex: 0 0 25%; width: 25%; }
+    <?php endif; ?>
 </style>
 
 <?php
+$device_header = $show_device ? "<span class=\"as-device\">_(Device)_</span>" : "";
+$user_header   = $show_user   ? "<span class=\"as-user\">_(User)_</span>"   : "";
+
 $mytiles[$plugin]['column1'] = <<<EOT
 <tbody class="sortable" title="{$widget_title}">
   <tr>
@@ -193,9 +208,9 @@ $mytiles[$plugin]['column1'] = <<<EOT
         <div class="as-header-row">
             <span class="as-server"></span>
             <span class="as-name">_(Name)_</span>
-            <span class="as-device">_(Device)_</span>
-            <span class="as-user">_(User)_</span>
-            <span class="as-time">_(Progress)_</span>
+            {$device_header}
+            {$user_header}
+            <span class="as-time">_(Status)_</span>
         </div>
     </td>
   </tr>

@@ -20,6 +20,8 @@ $cfg = parse_ini_file($cfg_file);
 
 $showEpisodeNumbers = isset($cfg['SHOW_EPISODE_NUMBERS']) ? ($cfg['SHOW_EPISODE_NUMBERS'] === '1') : false;
 $showPlayStatus     = isset($cfg['SHOW_PLAY_STATUS'])    ? ($cfg['SHOW_PLAY_STATUS']    === '1') : false;
+$showDevice         = isset($cfg['SHOW_DEVICE_COLUMN'])  ? ($cfg['SHOW_DEVICE_COLUMN']  === '1') : true;
+$showUser           = isset($cfg['SHOW_USER_COLUMN'])    ? ($cfg['SHOW_USER_COLUMN']    === '1') : true;
 
 if (!file_exists($servers_file)) {
     echo "<div style='padding:15px; text-align:center; color:#eebb00;'>
@@ -509,9 +511,9 @@ if (empty($allStreams)) {
         
         echo "<span class='as-name'><span class='as-name-text' title='$title'>$title</span></span>";
         
-        echo "<span class='as-device' title='$device'>$device</span>";
-        
-        echo "<span class='as-user' title='$user'>$user</span>";
+        if ($showDevice) echo "<span class='as-device' title='$device'>$device</span>";
+
+        if ($showUser) echo "<span class='as-user' title='$user'>$user</span>";
         
         echo "<span class='as-time'>";
         if ($s['transcoding']) {
