@@ -141,21 +141,27 @@ function testConnection($type, $host, $port, $token, $ssl, $sslVerify = false) {
     $url = '';
     $headers = [];
 
-    switch ($type) {
+    switch ($server['type']) {
         case 'plex':
-            $url = "$protocol://$host:$port/status/sessions?X-Plex-Token=$token";
-            $headers[] = 'Accept: application/json';
-            $headers[] = "X-Plex-Token: $token";
+            $url = "$protocol://{$server['host']}:{$server['port']}/status/sessions";
+            $headers = [
+                'Accept: application/json',
+                'X-Plex-Token: ' . $server['token']
+            ];
             break;
 
         case 'emby':
-            $url = "$protocol://$host:$port/emby/System/Info?api_key=$token";
+            $url = "$protocol://{$server['host']}:{$server['port']}/emby/Sessions";
+            $headers = ['X-Emby-Token: ' . $server['token']];
             break;
 
         case 'jellyfin':
-            $url = "$protocol://$host:$port/System/Info";
-            $headers[] = "X-Emby-Token: $token";
+            $url = "$protocol://{$server['host']}:{$server['port']}/Sessions";
+            $headers = ['Authorization: MediaBrowser Token="' . $server['token'] . '"'];
             break;
+
+        default:
+            return null;
     }
 
     $ch = curl_init();
