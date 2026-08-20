@@ -2,8 +2,8 @@
 <!DOCTYPE PLUGIN [
 <!ENTITY name      "activestreams">
 <!ENTITY author    "gthrift">
-<!ENTITY version   "2026.03.23">
-<!ENTITY sha256    "da60ca0f2150fb88859c151464d5d25aeb98eff13844d32255cd814c948bc071">
+<!ENTITY version   "2026.08.20">
+<!ENTITY sha256    "ed949dabd936b76a8fe76da65ff86b156b16ab9f02d7e7c09f03a9727e9cfff7">
 <!ENTITY launch    "Settings/ActiveStreamsSettings">
 <!ENTITY gitURL    "https://raw.githubusercontent.com/gthrift/activestreams-unraid/main">
 <!ENTITY pluginURL "&gitURL;/activestreams.plg">
@@ -23,6 +23,9 @@
         min="6.12.0">
 
 <CHANGES>
+###2026.08.20
+- Updated API auth method to use HTTP headers fixing Jellyfin v12 auth issue
+
 ###2026.03.23
 - Added options to hide User and Device columns
 - Added option to scroll long text
