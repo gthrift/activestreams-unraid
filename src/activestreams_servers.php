@@ -156,8 +156,8 @@ function testConnection($type, $host, $port, $token, $ssl, $sslVerify = false) {
             break;
 
         case 'jellyfin':
-            $url = "$protocol://{$server['host']}:{$server['port']}/Sessions";
-            $headers = ['Authorization: MediaBrowser Token="' . $server['token'] . '"'];
+            $url = "$protocol://$host:$port/System/Info";
+            $headers[] = 'Authorization: MediaBrowser Client="ActiveStreams", Device="Unraid", DeviceId="activestreams-plugin", Version="1.0.0", Token="' . $token . '"';
             break;
 
         default:
