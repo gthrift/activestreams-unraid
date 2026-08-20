@@ -99,7 +99,7 @@ function buildCurlHandle($server) {
 
     switch ($server['type']) {
         case 'plex':
-            $url = "$protocol://{$server['host']}:{$server['port']}/status/sessions?X-Plex-Token={$server['token']}";
+            $url = "$protocol://{$server['host']}:{$server['port']}/status/sessions";
             $headers = [
                 'Accept: application/json',
                 'X-Plex-Token: ' . $server['token']
@@ -107,13 +107,13 @@ function buildCurlHandle($server) {
             break;
 
         case 'emby':
-            $url = "$protocol://{$server['host']}:{$server['port']}/emby/Sessions?api_key={$server['token']}";
-            $headers = [];
+            $url = "$protocol://{$server['host']}:{$server['port']}/emby/Sessions";
+            $headers = ['X-Emby-Token: ' . $server['token']];
             break;
 
         case 'jellyfin':
             $url = "$protocol://{$server['host']}:{$server['port']}/Sessions";
-            $headers = ["X-Emby-Token: {$server['token']}"];
+            $headers = ['Authorization: MediaBrowser Token="' . $server['token'] . '"'];
             break;
 
         default:
