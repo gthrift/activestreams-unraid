@@ -116,10 +116,20 @@ function buildCurlHandle($server) {
             $headers = ['Authorization: MediaBrowser Client="ActiveStreams", Device="Unraid", DeviceId="activestreams-plugin", Version="1.0.0", Token="' . $server['token'] . '"'];
             break;
 
+        case 'dispatcharr':
+            // Combined live + VOD stats (Dispatcharr v0.28.0+)
+            $url = dispatcharrBaseUrl($server) . "/proxy/stats/";
+            $headers = dispatcharrHeaders($server);
+            break;
+
         default:
             return null;
     }
 
+    return makeCurl($url, $headers, $server);
+}
+
+function makeCurl($url, $headers, $server) {
     $ch = curl_init();
     curl_setopt($ch, CURLOPT_URL, $url);
     curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
@@ -137,11 +147,44 @@ function buildCurlHandle($server) {
     return $ch;
 }
 
+function dispatcharrBaseUrl($server) {
+    $protocol = ($server['ssl'] === '1' || $server['ssl'] === true) ? 'https' : 'http';
+    return "$protocol://{$server['host']}:{$server['port']}";
+}
+
+function dispatcharrHeaders($server) {
+    return [
+        'Accept: application/json',
+        'X-API-Key: ' . $server['token']
+    ];
+}
+
+/**
+ * Synchronous GET against the Dispatcharr API. Returns decoded JSON or null on failure.
+ */
+function dispatcharrGet($server, $path) {
+    $ch = makeCurl(dispatcharrBaseUrl($server) . $path, dispatcharrHeaders($server), $server);
+    $response = curl_exec($ch);
+    $http_code = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+    curl_close($ch);
+
+    if ($http_code !== 200 || !$response) {
+        return null;
+    }
+    $data = json_decode($response, true);
+    return is_array($data) ? $data : null;
+}
+
 function processServerResponse($server, $response, $http_code, $curl_error) {
     if ($curl_error) {
         $serverType = ucfirst($server['type']);
         error_log("$serverType connection error for {$server['name']}: $curl_error");
         return ['error' => "Connection error: $curl_error"];
+    }
+
+    // Older Dispatcharr versions lack /proxy/stats/; the parser falls back on 404
+    if ($server['type'] === 'dispatcharr' && $http_code === 404) {
+        return parseDispatcharrResponse($server, null);
     }
 
     if ($http_code !== 200 || !$response) {
@@ -152,6 +195,8 @@ function processServerResponse($server, $response, $http_code, $curl_error) {
 
     if ($server['type'] === 'plex') {
         return parsePlexResponse($server, $response);
+    } elseif ($server['type'] === 'dispatcharr') {
+        return parseDispatcharrResponse($server, $response);
     } else {
         return parseEmbyJellyfinResponse($server, $response);
     }
@@ -416,6 +461,165 @@ function parseEmbyJellyfinResponse($server, $response) {
     return ['streams' => $streams];
 }
 
+/**
+ * Shorten a user agent to a readable client name, e.g. "VLC/3.0.20 LibVLC/3.0.20" -> "VLC".
+ */
+function shortUserAgent($ua) {
+    $ua = trim((string)$ua);
+    if ($ua === '' || $ua === 'Unknown') return 'Unknown';
+    $parts = preg_split('#[\s/]+#', $ua);
+    return $parts[0] !== '' ? $parts[0] : $ua;
+}
+
+/**
+ * Parse Dispatcharr stats. $response is the /proxy/stats/ body, or null to fall back
+ * to the live-only /proxy/ts/status endpoint used by versions before v0.28.0.
+ */
+function parseDispatcharrResponse($server, $response) {
+    global $showEpisodeNumbers;
+
+    if ($response === null) {
+        $live = dispatcharrGet($server, '/proxy/ts/status');
+        if ($live === null) {
+            error_log("Dispatcharr stats unavailable for {$server['name']}");
+            return ['error' => 'Stats unavailable'];
+        }
+        $data = ['live' => $live, 'vod' => []];
+    } else {
+        $data = json_decode($response, true);
+        if (!is_array($data)) {
+            return ['error' => 'Invalid response'];
+        }
+    }
+
+    $channels = $data['live']['channels'] ?? [];
+    $vodConnections = $data['vod']['vod_connections'] ?? [];
+    // TODO: catch-up sessions ($data['catchup']) use a different schema; not shown yet
+
+    // Resolve user IDs to usernames with a single lookup, only if needed
+    $needUsers = false;
+    foreach ($channels as $ch) {
+        foreach ($ch['clients'] ?? [] as $c) {
+            if (!empty($c['user_id']) && $c['user_id'] !== '0') { $needUsers = true; break 2; }
+        }
+    }
+    if (!$needUsers) {
+        foreach ($vodConnections as $v) {
+            if (!empty($v['user_id']) && $v['user_id'] !== '0') { $needUsers = true; break; }
+        }
+    }
+    $usernames = [];
+    if ($needUsers) {
+        $users = dispatcharrGet($server, '/api/accounts/users/');
+        // Handle both plain list and paginated {results: [...]} responses
+        if (isset($users['results']) && is_array($users['results'])) {
+            $users = $users['results'];
+        }
+        foreach ($users ?? [] as $u) {
+            if (isset($u['id'], $u['username'])) {
+                $usernames[(string)$u['id']] = $u['username'];
+            }
+        }
+    }
+    $resolveUser = function ($userId, $ip) use ($usernames) {
+        $userId = (string)($userId ?? '');
+        if ($userId !== '' && $userId !== '0' && isset($usernames[$userId])) {
+            return $usernames[$userId];
+        }
+        return ($ip && $ip !== 'Unknown') ? $ip : 'Unknown';
+    };
+
+    $now = time();
+    $streams = [];
+
+    foreach ($channels as $ch) {
+        $title = $ch['channel_name'] ?? $ch['stream_name'] ?? 'Unknown Channel';
+
+        // Source stream details shown in the tooltip
+        $details = [];
+        $videoParts = [];
+        if (!empty($ch['resolution']))  $videoParts[] = $ch['resolution'];
+        if (!empty($ch['video_codec'])) $videoParts[] = strtoupper($ch['video_codec']);
+        if (!empty($ch['source_fps']))  $videoParts[] = '@ ' . round((float)$ch['source_fps']) . ' fps';
+        if ($videoParts) $details[] = 'Video: ' . implode(' ', $videoParts);
+
+        $audioParts = [];
+        if (!empty($ch['audio_codec'])) $audioParts[] = strtoupper($ch['audio_codec']);
+        if (!empty($ch['audio_channels'])) {
+            $audioParts[] = is_numeric($ch['audio_channels']) ? formatChannels($ch['audio_channels']) : $ch['audio_channels'];
+        }
+        if ($audioParts) $details[] = 'Audio: ' . implode(' ', $audioParts);
+
+        if (!empty($ch['avg_bitrate'])) $details[] = 'Bitrate: ' . $ch['avg_bitrate'];
+        if (!empty($ch['stream_name']) && $ch['stream_name'] !== $title) {
+            $details[] = 'Source: ' . $ch['stream_name'];
+        }
+
+        $clients = $ch['clients'] ?? [];
+        foreach ($clients as $client) {
+            $connectedAt = isset($client['connected_at']) ? (float)$client['connected_at'] : 0;
+            $elapsed = $connectedAt > 0 ? $now - $connectedAt : ($ch['uptime'] ?? 0);
+            $isTranscoding = !empty($client['output_profile_id']);
+
+            $clientDetails = $details;
+            if ($isTranscoding) {
+                $clientDetails[] = 'Output: Transcoded (profile ' . $client['output_profile_id'] . ')';
+            }
+
+            $streams[] = [
+                'server_name' => $server['name'],
+                'server_type' => 'dispatcharr',
+                'title' => $title,
+                'user' => $resolveUser($client['user_id'] ?? null, $client['ip_address'] ?? ''),
+                'device' => shortUserAgent($client['user_agent'] ?? ''),
+                'state' => 'playing',
+                'progress' => $elapsed,
+                'duration' => 0,
+                'live' => true,
+                'transcoding' => $isTranscoding,
+                'transcode_details' => $clientDetails
+            ];
+        }
+    }
+
+    foreach ($vodConnections as $v) {
+        $meta = $v['content_metadata'] ?? [];
+        $title = $v['content_name'] ?? 'Unknown';
+
+        if (($v['content_type'] ?? '') === 'episode' && !empty($meta['series_name'])) {
+            $episodeName = $meta['episode_name'] ?? '';
+            if ($showEpisodeNumbers && isset($meta['season_number'], $meta['episode_number'])) {
+                $season = str_pad($meta['season_number'], 2, '0', STR_PAD_LEFT);
+                $episode = str_pad($meta['episode_number'], 2, '0', STR_PAD_LEFT);
+                $title = "{$meta['series_name']} - S{$season}E{$episode} - $episodeName";
+            } else {
+                $title = "{$meta['series_name']} - $episodeName";
+            }
+        }
+
+        $details = [];
+        if (!empty($v['m3u_profile']['account_name']) && $v['m3u_profile']['account_name'] !== 'Unknown Account') {
+            $details[] = 'Source: ' . $v['m3u_profile']['account_name'];
+        }
+
+        $streams[] = [
+            'server_name' => $server['name'],
+            'server_type' => 'dispatcharr',
+            'title' => $title,
+            'user' => $resolveUser($v['user_id'] ?? null, $v['client_ip'] ?? ''),
+            'device' => shortUserAgent($v['user_agent'] ?? ''),
+            'state' => 'playing',
+            'progress' => $v['position_seconds'] ?? 0,
+            'duration' => $meta['duration_secs'] ?? 0,
+            'live' => false,
+            'transcoding' => false,
+            'transcode_details' => $details
+        ];
+    }
+
+    return ['streams' => $streams];
+}
+
 $allStreams = [];
 $errors = [];
 
@@ -482,16 +686,23 @@ if (empty($allStreams)) {
         $isPaused = ($s['state'] === 'paused');
         $statusColor = $isPaused ? "#f0ad4e" : "#8cc43c";
 
+        $isLive = !empty($s['live']);
         $progressStr = formatTime($s['progress']);
-        $durationStr = formatTime($s['duration']);
-        $timeDisplay = "$progressStr / $durationStr";
-
-        $timeTooltip = htmlspecialchars(formatTimeFull($s['progress']) . ' / ' . formatTimeFull($s['duration']));
+        if ($isLive) {
+            // Live TV has no duration; show time watched instead
+            $timeDisplay = "$progressStr &middot; Live";
+            $timeTooltip = htmlspecialchars('Watching for ' . formatTimeFull($s['progress']));
+        } else {
+            $durationStr = formatTime($s['duration']);
+            $timeDisplay = "$progressStr / $durationStr";
+            $timeTooltip = htmlspecialchars(formatTimeFull($s['progress']) . ' / ' . formatTimeFull($s['duration']));
+        }
 
         $typeColors = [
             'plex' => '#e5a00d',
             'emby' => '#52b54b', 
-            'jellyfin' => '#00a4dc'
+            'jellyfin' => '#00a4dc',
+            'dispatcharr' => '#14917e'
         ];
         $typeColor = $typeColors[$serverType] ?? '#888';
         
@@ -501,6 +712,10 @@ if (empty($allStreams)) {
                 ? htmlspecialchars(implode("\n", $s['transcode_details']))
                 : 'Transcoding';
             $transcodeHtml = " <i class='fa fa-random as-transcode' style='color:#e5a00d; cursor:help;' title='$transcodeTooltip'></i>";
+        } elseif ($serverType === 'dispatcharr' && !empty($s['transcode_details'])) {
+            // Dispatcharr rows show source stream info even when not transcoding
+            $infoTooltip = htmlspecialchars(implode("\n", $s['transcode_details']));
+            $transcodeHtml = " <i class='fa fa-info-circle as-transcode' style='opacity:0.6; cursor:help;' title='$infoTooltip'></i>";
         }
         
         echo "<div class='as-row'>";
@@ -516,11 +731,9 @@ if (empty($allStreams)) {
         if ($showUser) echo "<span class='as-user' title='$user'>$user</span>";
         
         echo "<span class='as-time'>";
-        if ($s['transcoding']) {
-            echo $transcodeHtml;
-        }
+        echo $transcodeHtml;
         if ($showPlayStatus) {
-            $statusText = $isPaused ? "Paused" : "Playing";
+            $statusText = $isLive ? "Live" : ($isPaused ? "Paused" : "Playing");
             echo "<span style='color:{$statusColor}; cursor:default;' title='{$timeTooltip}'>{$statusText}</span>";
         } else {
             echo "<span style='color:{$statusColor};'>{$timeDisplay}</span>";

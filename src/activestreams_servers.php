@@ -103,7 +103,7 @@ function validatePort($port) {
 }
 
 function validateServerType($type) {
-    return in_array($type, ['plex', 'emby', 'jellyfin'], true);
+    return in_array($type, ['plex', 'emby', 'jellyfin', 'dispatcharr'], true);
 }
 
 function validateServerData($data) {
@@ -141,18 +141,18 @@ function testConnection($type, $host, $port, $token, $ssl, $sslVerify = false) {
     $url = '';
     $headers = [];
 
-    switch ($server['type']) {
+    switch ($type) {
         case 'plex':
-            $url = "$protocol://{$server['host']}:{$server['port']}/status/sessions";
+            $url = "$protocol://$host:$port/status/sessions";
             $headers = [
                 'Accept: application/json',
-                'X-Plex-Token: ' . $server['token']
+                'X-Plex-Token: ' . $token
             ];
             break;
 
         case 'emby':
-            $url = "$protocol://{$server['host']}:{$server['port']}/emby/Sessions";
-            $headers = ['X-Emby-Token: ' . $server['token']];
+            $url = "$protocol://$host:$port/emby/System/Info";
+            $headers = ['X-Emby-Token: ' . $token];
             break;
 
         case 'jellyfin':
@@ -160,8 +160,17 @@ function testConnection($type, $host, $port, $token, $ssl, $sslVerify = false) {
             $headers[] = 'Authorization: MediaBrowser Client="ActiveStreams", Device="Unraid", DeviceId="activestreams-plugin", Version="1.0.0", Token="' . $token . '"';
             break;
 
+        case 'dispatcharr':
+            // Admin-only endpoint, so a 200 confirms the key is valid and has admin rights
+            $url = "$protocol://$host:$port/proxy/ts/status";
+            $headers = [
+                'Accept: application/json',
+                'X-API-Key: ' . $token
+            ];
+            break;
+
         default:
-            return null;
+            return ['success' => false, 'error' => 'Unknown server type'];
     }
 
     $ch = curl_init();
@@ -202,6 +211,12 @@ function testConnection($type, $host, $port, $token, $ssl, $sslVerify = false) {
             $serverName = 'Plex Server';
         } elseif (($type === 'emby' || $type === 'jellyfin') && isset($data['ServerName'])) {
             $serverName = $data['ServerName'];
+        } elseif ($type === 'dispatcharr' && is_array($data)) {
+            $serverName = 'Dispatcharr';
+            $version = fetchDispatcharrVersion($protocol, $host, $port, $sslVerify);
+            if ($version) {
+                $serverName .= " v$version";
+            }
         }
 
         return ['success' => true, 'message' => $serverName ? "Connected to: $serverName" : 'Connection successful'];
@@ -211,6 +226,8 @@ function testConnection($type, $host, $port, $token, $ssl, $sslVerify = false) {
     $errorMsg = "HTTP $http_code";
     if ($http_code === 401) {
         $errorMsg = "Authentication failed (HTTP 401) - Please verify your token/API key";
+    } elseif ($http_code === 403) {
+        $errorMsg = "Permission denied (HTTP 403) - The API key must belong to an admin user";
     } elseif ($http_code === 404) {
         $errorMsg = "Server endpoint not found (HTTP 404) - Check host and port";
     } elseif ($http_code === 0) {
@@ -223,6 +240,26 @@ function testConnection($type, $host, $port, $token, $ssl, $sslVerify = false) {
         'success' => false,
         'error' => $errorMsg
     ];
+}
+
+function fetchDispatcharrVersion($protocol, $host, $port, $sslVerify) {
+    $ch = curl_init();
+    curl_setopt($ch, CURLOPT_URL, "$protocol://$host:$port/api/core/version/");
+    curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+    curl_setopt($ch, CURLOPT_CONNECTTIMEOUT, 5);
+    curl_setopt($ch, CURLOPT_TIMEOUT, 5);
+    curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, $sslVerify);
+    curl_setopt($ch, CURLOPT_SSL_VERIFYHOST, $sslVerify ? 2 : 0);
+    curl_setopt($ch, CURLOPT_HTTPHEADER, ['Accept: application/json']);
+    $response = curl_exec($ch);
+    $http_code = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+    curl_close($ch);
+
+    if ($http_code !== 200 || !$response) {
+        return '';
+    }
+    $data = json_decode($response, true);
+    return is_array($data) && !empty($data['version']) ? (string)$data['version'] : '';
 }
 
 $action = $_POST['action'] ?? '';

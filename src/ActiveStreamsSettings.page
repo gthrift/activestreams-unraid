@@ -186,6 +186,7 @@ IconFA="film"
     .type-plex { color: #e5a00d; }
     .type-emby { color: #52b54b; }
     .type-jellyfin { color: #00a4dc; }
+    .type-dispatcharr { color: #14917e; }
     
     /* Test Result Box */
     .as-test-result { 
@@ -270,6 +271,8 @@ if (!is_array($servers)) $servers = [];
                 <option value="Plex Streams" <?php echo($cfg['WIDGET_TITLE'] === "Plex Streams" ? "selected" : ""); ?>>Plex Streams</option>
                 <option value="Emby Streams" <?php echo($cfg['WIDGET_TITLE'] === "Emby Streams" ? "selected" : ""); ?>>Emby Streams</option>
                 <option value="Jellyfin Streams" <?php echo($cfg['WIDGET_TITLE'] === "Jellyfin Streams" ? "selected" : ""); ?>>Jellyfin Streams</option>
+                <option value="Dispatcharr Streams" <?php echo($cfg['WIDGET_TITLE'] === "Dispatcharr Streams" ? "selected" : ""); ?>>Dispatcharr Streams</option>
+                <option value="IPTV Streams" <?php echo($cfg['WIDGET_TITLE'] === "IPTV Streams" ? "selected" : ""); ?>>IPTV Streams</option>
             </select>
         </div>
         
@@ -280,6 +283,7 @@ if (!is_array($servers)) $servers = [];
                 <option value="plex" <?php echo($cfg['WIDGET_ICON'] === "plex" ? "selected" : ""); ?>>Plex</option>
                 <option value="emby" <?php echo($cfg['WIDGET_ICON'] === "emby" ? "selected" : ""); ?>>Emby</option>
                 <option value="jellyfin" <?php echo($cfg['WIDGET_ICON'] === "jellyfin" ? "selected" : ""); ?>>Jellyfin</option>
+                <option value="dispatcharr" <?php echo($cfg['WIDGET_ICON'] === "dispatcharr" ? "selected" : ""); ?>>Dispatcharr</option>
             </select>
         </div>
         
@@ -340,7 +344,7 @@ if (!is_array($servers)) $servers = [];
 <!-- Server Management Section -->
 <div class="as-section">
     <h3><i class="fa fa-server"></i> _(Media Servers)_</h3>
-    <p>_(Configure your Plex, Emby, and Jellyfin servers below.)_</p>
+    <p>_(Configure your Plex, Emby, Jellyfin, and Dispatcharr servers below.)_</p>
     
     <div class="as-server-list" id="serverList">
         <?php if (empty($servers)): ?>
@@ -356,7 +360,7 @@ if (!is_array($servers)) $servers = [];
                         <span class="as-toggle-slider"></span>
                     </label>
                     <span class="server-type type-<?php echo htmlspecialchars($server['type']); ?>">
-                        <i class="fa fa-<?php echo $server['type'] === 'plex' ? 'play-circle' : ($server['type'] === 'emby' ? 'film' : 'film'); ?>"></i>
+                        <i class="fa fa-<?php echo $server['type'] === 'plex' ? 'play-circle' : ($server['type'] === 'dispatcharr' ? 'television' : 'film'); ?>"></i>
                         <?php echo htmlspecialchars($server['type']); ?>
                     </span>
                     <span class="server-name"><?php echo htmlspecialchars($server['name']); ?></span>
@@ -388,6 +392,7 @@ if (!is_array($servers)) $servers = [];
                     <option value="plex">Plex</option>
                     <option value="emby">Emby</option>
                     <option value="jellyfin">Jellyfin</option>
+                    <option value="dispatcharr">Dispatcharr</option>
                 </select>
             </div>
             
@@ -457,16 +462,18 @@ $(function() {
 
 function updateFormFields() {
     var type = $('#serverType').val();
-    var ports = { plex: 32400, emby: 8096, jellyfin: 8096 };
+    var ports = { plex: 32400, emby: 8096, jellyfin: 8096, dispatcharr: 9191 };
     var hints = { 
         plex: '_(Default: 32400 for Plex)_', 
         emby: '_(Default: 8096 for Emby, 8920 for HTTPS)_', 
-        jellyfin: '_(Default: 8096 for Jellyfin, 8920 for HTTPS)_' 
+        jellyfin: '_(Default: 8096 for Jellyfin, 8920 for HTTPS)_',
+        dispatcharr: '_(Default: 9191 for Dispatcharr)_'
     };
     var tokenHints = {
         plex: '_(Find your X-Plex-Token in browser dev tools or Plex settings)_',
         emby: '_(Generate in Emby Dashboard > Advanced > API Keys)_',
-        jellyfin: '_(Generate in Jellyfin Dashboard > Advanced > API Keys)_'
+        jellyfin: '_(Generate in Jellyfin Dashboard > Advanced > API Keys)_',
+        dispatcharr: '_(Generate in Dispatcharr under your user settings > API & XC. Requires an admin user and Dispatcharr v0.20.0 or later.)_'
     };
     
     $('#serverPort').attr('placeholder', ports[type]);
@@ -598,7 +605,8 @@ function testConnection() {
 }
 
 function getDefaultPort(type) {
-    return type === 'plex' ? 32400 : 8096;
+    var ports = { plex: 32400, emby: 8096, jellyfin: 8096, dispatcharr: 9191 };
+    return ports[type] || 8096;
 }
 
 $('#serverForm').on('submit', function(e) {
